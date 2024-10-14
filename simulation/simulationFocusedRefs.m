@@ -17,11 +17,10 @@ rho0            = 1000;     % density [kg/m^3]
 source_f0       = 6.66e6;   % source frequency [Hz]
 source_amp      = 1e6;      % source pressure [Pa]
 source_cycles   = 3.5;      % number of toneburst cycles
-source_focus    = 20e-3;    % focal length [m]
+source_focus    = 40e-3;    % focal length [m]
 element_pitch   = 0.3e-3;   % pitch [m]
 element_width   = 0.25e-3;  % width [m]
-focal_number_Tx = 3;
-focal_number_Rx = 1;
+focal_number    = 2;
 nLines          = 96;
 
 % grid parameters
@@ -96,7 +95,7 @@ for iSim = 1:length(simuNames)
     colormap(t3,"turbo")
 
     %% SOURCE
-    aperture = source_focus/focal_number_Tx;
+    aperture = source_focus/focal_number;
     element_num = floor(aperture/element_pitch);
     
     % set indices for each element
@@ -168,7 +167,7 @@ for iSim = 1:length(simuNames)
         % beamforming
         fs = 1/kgrid.dt;
         bf_data = BFangle(combined_sensor_data',element_num,fs,c0,element_pitch,...
-            'rect',focal_number_Rx,0);
+            'rect',focal_number,0);
         index = floor(element_num/2)+1;
         bf_data_final(:,iLine) = bf_data(:,index);
 

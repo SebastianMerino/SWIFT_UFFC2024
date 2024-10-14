@@ -18,7 +18,7 @@ rho0            = 1000;     % density [kg/m^3]
 source_f0       = 6.66e6;   % source frequency [Hz]
 source_amp      = 1e6;      % source pressure [Pa]
 source_cycles   = 3.5;      % number of toneburst cycles
-source_focus    = 20e-3;    % focal length [m]
+source_focus    = 40e-3;    % focal length [m]
 element_pitch   = 0.3e-3;   % pitch [m]
 element_width   = 0.25e-3;  % width [m]
 focal_number    = 2;
@@ -66,8 +66,6 @@ for iSim = 1:length(simuNames)
         case 1
             background_std = 0.002;
         case 2
-            background_std = 0.004;
-        case 3
             background_std = 0.008;
     end
     background_alpha = 1;       % [dB/(MHz^y cm)]
@@ -76,7 +74,7 @@ for iSim = 1:length(simuNames)
 
     % Inclusion
     cz = 1e-2; cx = -0.8e-2;
-    r = 0.6e-2;
+    r = 0.3e-2;
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
     inc_alpha = 0.5; inc_std = 0.002;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...
@@ -84,7 +82,7 @@ for iSim = 1:length(simuNames)
 
     % Other inclusion
     cz = 2e-2; cx = 0.8e-2;
-    r = 0.4e-2;
+    r = 0.5e-2;
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
     inc_alpha = 0.5; inc_std = 0.008;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...
