@@ -22,7 +22,7 @@ if ~exist("resultsDir","dir"); mkdir(resultsDir); end
 
 
 %% Loading case
-iAcq = 1;
+for iAcq = 1:3
 load(fullfile(dataDir,targetFiles(iAcq).name));
 dx = x(2)-x(1);
 dz = z(2)-z(1);
@@ -34,33 +34,11 @@ sam1 = RF(:,:,1);
 BmodeFull = db(hilbert(sam1));
 BmodeFull = BmodeFull - max(BmodeFull(:));
 
-% Manual cropping
-dynRange = [-50,-10];
-figure('Units','centimeters', 'Position',[5 5 15 15]),
-imagesc(x,z,BmodeFull,dynRange); axis image; 
-colormap gray; clim(dynRange);
-hb2=colorbar; ylabel(hb2,'dB')
-xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
-ylim([0.1 3.5])
-
-% confirmation = '';
-% while ~strcmp(confirmation,'Yes')
-%     rect = getrect;
-%     confirmation = questdlg('Sure?');
-%     if strcmp(confirmation,'Cancel')
-%         disp(rect)
-%         break
-%     end
-% end
-% close,
-
 
 %% Cropping and finding sample sizes
 % Region for attenuation imaging
-% x_inf = rect(1); x_sup = rect(1)+rect(3);
-% z_inf = rect(2); z_sup = rect(2)+rect(4);
 x_inf = 0; x_sup = 5;
-z_inf = 0.1; z_sup = 3.5;
+z_inf = 0.1; z_sup = 4;
 
 % Limits for ACS estimation
 ind_x = x_inf <= x & x <= x_sup;
@@ -85,22 +63,31 @@ bsRange = [-2 2];
 
 [pxx,fpxx] = pwelch(sam1,300,250,512,fs);
 
-figure('Units','centimeters', 'Position',[5 5 18 6]),
-tiledlayout(1,2)
-nexttile, imagesc(x,z,Bmode,dynRange)
-axis image
-colormap(gray)
-colorbar('westoutside')
-title('Bmode')
-
-nexttile,plot(fpxx/1e6,mean(pxx,2))
-title('Spectrum')
-xlabel('f [MHz]')
-grid on
+% figure('Units','centimeters', 'Position',[5 5 18 6]),
+% tiledlayout(1,2)
+% nexttile, imagesc(x,z,Bmode,dynRange)
+% axis image
+% colormap(gray)
+% colorbar('westoutside')
+% title('Bmode')
+% 
+% nexttile,plot(fpxx/1e6,mean(pxx,2))
+% title('Spectrum')
+% xlabel('f [MHz]')
+% grid on
 
 
 %%
 fc = 7.5E6; freqTol = 0.5e6;
+z0 = 2.9; zf = 3.5;
+x0Inc = 1.5; xfInc = 2.05;
+x0Out = 0.25; xfOut = 0.70;
+x0Out2 = 2.95; xfOut2 = 3.40;
+% x0Out = 0.25; xfOut = 0.80;
+% x0Out2 = 2.85; xfOut2 = 3.45;
+% x0Inc = 1.25; xfInc = 1.85;
+
+
 [bFilt,aFilt] = butter(3,[fc-freqTol fc+freqTol]/fs*2, "bandpass");
 samFilt = filtfilt(bFilt,aFilt,sam1);
 [pxx,fpxx] = pwelch(samFilt,300,250,512,fs);
@@ -116,21 +103,14 @@ colormap(gray)
 colorbar('westoutside')
 title('Bmode')
 
-z0 = 3; zf = 3.4;
-% switch iAcq
-%     case 1
-%         z0 = 1.8; zf = 1.9;
-%         % z0 = 2; zf = 2.2;
-%     case 2
-%         z0 = 2.7; zf = 3;
-%     case 3
-%         z0 = 1.5; zf = 2.5;
-%     otherwise
-% 
-%         % z0 = 2.2; zf = 2.5;
-% end
 yline(z0, 'b--','LineWidth',1.5)
 yline(zf, 'b--','LineWidth',1.5)
+xline(x0Inc, 'g--', 'LineWidth',2)
+xline(xfInc, 'g--', 'LineWidth',2)
+xline(x0Out, 'r--', 'LineWidth',2)
+xline(xfOut, 'r--', 'LineWidth',2)
+xline(x0Out2, 'r--', 'LineWidth',2)
+xline(xfOut2, 'r--', 'LineWidth',2)
 
 nexttile,plot(fpxx/1e6,mean(pxx,2))
 title('Spectrum')
@@ -141,26 +121,8 @@ grid on
 [~,Z] = meshgrid(x,z);
 mask = Z>z0 & Z<zf;
 
-x0Inc = 1.6; xfInc = 2.2;
-x0Out = 0.25; xfOut = 0.85;
-x0Out2 = 2.95; xfOut2 = 3.55;
-
-% switch iAcq
-%     case 1
-%         x0Inc = 1.9; xfInc = 2.1;
-%         x0Out = 0.1; xfOut = 0.9;
-%     case 2
-%         x0Inc = 2.3; xfInc = 3;
-%         x0Out = 0.6; xfOut = 1.6;
-%     case 3
-%         x0Inc = 1.4; xfInc = 2.1;
-%         % x0Out = 2.5; xfOut = 3.5;
-%         x0Out = 2.3; xfOut = 3.2;
-%     otherwise
-% 
-% end
 BmodeFilt(~mask) = NaN;
-latProfile = median(BmodeFilt,"omitmissing");
+latProfile = mean(BmodeFilt,"omitmissing");
 figure('Units','centimeters', 'Position',[5 5 9 6]),
 plot(x,latProfile)
 grid on
@@ -189,8 +151,9 @@ incDiameter = 1.9;
 %         % 
 %         % 
 % end
-underInclusion = mean(latProfile(x>x0Inc & x <xfInc))
-ousideInclusion = mean(latProfile((x>x0Out & x <xfOut)|(x>x0Out2 & x <xfOut2)))
+underInclusion = mean(latProfile(x>x0Inc & x <xfInc));
+ousideInclusion = mean(latProfile((x>x0Out & x <xfOut)|(x>x0Out2 & x <xfOut2)));
 acEnhancement = underInclusion - ousideInclusion
-
 attDiff = acEnhancement/2/incDiameter/fc*1E6
+
+end
