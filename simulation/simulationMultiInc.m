@@ -7,7 +7,7 @@
 function [] = simulationMultiInc(BaseDir)
 
 addpath(genpath(pwd))
-simuNames = {'sim1','sim2','sim3'};
+simuNames = {'sim1','sim2'};
 % mkdir(BaseDir)
 
 % medium parameters
