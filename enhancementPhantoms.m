@@ -80,9 +80,9 @@ bsRange = [-2 2];
 %%
 fc = 7.5E6; freqTol = 0.5e6;
 z0 = 2.9; zf = 3.5;
-x0Inc = 1.5; xfInc = 2.05;
+x0Inc = 1.44; xfInc = 2.14;
 x0Out = 0.25; xfOut = 0.70;
-x0Out2 = 2.95; xfOut2 = 3.40;
+x0Out2 = 2.97; xfOut2 = 3.41;
 % x0Out = 0.25; xfOut = 0.80;
 % x0Out2 = 2.85; xfOut2 = 3.45;
 % x0Inc = 1.25; xfInc = 1.85;

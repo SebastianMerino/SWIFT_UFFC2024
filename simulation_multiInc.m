@@ -1,11 +1,11 @@
 clear,clc
 
-% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14';
-% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-10-14';
-dataDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation\24_10_14_v2';
-refDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation\24_10_14_ref';
-resultsDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation';
+dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14_multiInc';
+refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14_ref';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\multiInc';
+% dataDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation\24_10_14_v2';
+% refDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation\24_10_14_ref';
+% resultsDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
@@ -16,7 +16,7 @@ tableName = 'simuInc.xlsx';
 blocksize = 8;     % Block size in wavelengths
 freq_L = 3.5e6; freq_H = 8.5e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
-ratio_zx        = 12/8;
+ratio_zx        = 3/2;
 
 % New simu
 referenceAtt    = 0.6;
@@ -101,18 +101,6 @@ z_ACS = z(z0p+ nz/2);
 m  = length(z0p);
 
 %% Spectrum
-% BW from spectrogram
-% [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
-% meanSpectrum = mean(pxx,2);
-% [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, 0.1);
-% meanSpectrum = db(meanSpectrum./max(meanSpectrum));
-% figure,plot(fpxx/1e6,meanSpectrum)
-% xline([freq_L,freq_H]/1e6)
-% xlabel('Frequency [MHz]')
-% ylabel('Magnitude')
-% xlim([0 15])
-% grid on
-
 % Frequency samples
 NFFT = 2^(nextpow2(nz/2)+2);
 band = (0:NFFT-1)'/NFFT * fs;   % [Hz] Band of frequencies
@@ -134,6 +122,7 @@ windowing = windowing*ones(1,nx);
 % For looping
 Nref = length(refFiles);
 
+if iAcq == 1
 % Memory allocation
 Sp_ref = zeros(m,n,p);
 Sd_ref = zeros(m,n,p);
@@ -164,10 +153,8 @@ for iRef = 1:Nref %Nref
     end
     compensation(:,:,:,iRef) = log(Sp_ref) - log(Sd_ref) - 4*L*att_ref_map;
 end
-
 compensation = mean(compensation,4);
-% compensation = repmat(mean(compensation,3),1,1,p);
-
+end
 %% Spectrum
 Sp = zeros(m,n,p);
 Sd = zeros(m,n,p);
@@ -203,11 +190,11 @@ rInc = 0.7; c1x = 0; c1z = 2.05;
 [Xq,Zq] = meshgrid(x,z);
 inclusion = (Xq.^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
 back = (Xq.^2 + (Zq-c1z).^2) >= (rInc+0.1)^2;
-attIdeal = ones(size(Xq))*groundTruthBack(iAcq);
-attIdeal((Xq.^2 + (Zq-c1z).^2)<= rInc^2) = groundTruthInc(iAcq);
-inclusionACS = (X.^2 + (Z-c1z).^2)<= rInc^2;
-attIdealACS = ones(size(X))*groundTruthBack(iAcq);
-attIdealACS(inclusionACS) = groundTruthInc(iAcq); %incl = inclusion
+% attIdeal = ones(size(Xq))*groundTruthBack(iAcq);
+% attIdeal((Xq.^2 + (Zq-c1z).^2)<= rInc^2) = groundTruthInc(iAcq);
+% inclusionACS = (X.^2 + (Z-c1z).^2)<= rInc^2;
+% attIdealACS = ones(size(X))*groundTruthBack(iAcq);
+% attIdealACS(inclusionACS) = groundTruthInc(iAcq); %incl = inclusion
 
 % Ideal maps
 [Xq,Zq] = meshgrid(x/1e2,z/1e2);
@@ -222,17 +209,17 @@ BRTV = reshape(Bn*NptodB,m,n);
 CRTV = reshape(Cn*NptodB,m,n);
 
 
-AttInterp = interp2(X,Z,BRTV,Xq,Zq);
-r.meanBack = mean(AttInterp(back),"omitnan");
-r.stdBack = std(AttInterp(back),"omitnan");
-r.meanInc = mean(AttInterp(inclusion),"omitnan");
-r.stdInc = std(AttInterp(inclusion),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
-r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
-r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
-r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
-r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
-MetricsTV(iAcq) = r;
+% AttInterp = interp2(X,Z,BRTV,Xq,Zq);
+% r.meanBack = mean(AttInterp(back),"omitnan");
+% r.stdBack = std(AttInterp(back),"omitnan");
+% r.meanInc = mean(AttInterp(inclusion),"omitnan");
+% r.stdInc = std(AttInterp(inclusion),"omitnan");
+% r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
+% r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
+% r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
+% r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
+% r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
+% MetricsTV(iAcq) = r;
 %% SWTV
 % Calculating SNR
 envelope = abs(hilbert(sam1));
@@ -262,17 +249,17 @@ m,n,tol,mask(:),wSNR);
 BRSWTV = reshape(Bn*NptodB,m,n);
 CRSWTV = reshape(Cn*NptodB,m,n);
 
-AttInterp = interp2(X,Z,BRSWTV,Xq,Zq);
-r.meanBack = mean(AttInterp(back),"omitnan");
-r.stdBack = std(AttInterp(back),"omitnan");
-r.meanInc = mean(AttInterp(inclusion),"omitnan");
-r.stdInc = std(AttInterp(inclusion),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
-r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
-r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
-r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
-r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
-MetricsSWTV(iAcq) = r;
+% AttInterp = interp2(X,Z,BRSWTV,Xq,Zq);
+% r.meanBack = mean(AttInterp(back),"omitnan");
+% r.stdBack = std(AttInterp(back),"omitnan");
+% r.meanInc = mean(AttInterp(inclusion),"omitnan");
+% r.stdInc = std(AttInterp(inclusion),"omitnan");
+% r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
+% r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
+% r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
+% r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
+% r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
+% MetricsSWTV(iAcq) = r;
 
 %% SWIFT
 % First iteration
@@ -295,17 +282,17 @@ A2w = W*A2;
 BRWFR = reshape(Bn*NptodB,m,n);
 
 
-AttInterp = interp2(X,Z,BRWFR,Xq,Zq);
-r.meanBack = mean(AttInterp(back),"omitnan");
-r.stdBack = std(AttInterp(back),"omitnan");
-r.meanInc = mean(AttInterp(inclusion),"omitnan");
-r.stdInc = std(AttInterp(inclusion),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
-r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
-r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
-r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
-r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
-MetricsWFR(iAcq) = r;
+% AttInterp = interp2(X,Z,BRWFR,Xq,Zq);
+% r.meanBack = mean(AttInterp(back),"omitnan");
+% r.stdBack = std(AttInterp(back),"omitnan");
+% r.meanInc = mean(AttInterp(inclusion),"omitnan");
+% r.stdInc = std(AttInterp(inclusion),"omitnan");
+% r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
+% r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
+% r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
+% r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
+% r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
+% MetricsWFR(iAcq) = r;
 %% Plotting
 figure('Units','centimeters', 'Position',[5 5 22 4]);
 tiledlayout(1,5, "Padding","tight", 'TileSpacing','compact');
@@ -376,10 +363,6 @@ c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-% hold on 
-% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-%     'LineWidth',1, 'Curvature',1, 'EdgeColor',[1 1 1])
-% hold off
 
 fontsize(gcf,8,'points')
 
@@ -427,37 +410,37 @@ end
 
 
 %%
-results1 = struct2table(MetricsTV);
-results2 = struct2table(MetricsSWTV);
-results4 = struct2table(MetricsWFR);
-
-disp('Bias Back')
-disp(results1.biasBack)
-disp(results2.biasBack)
-disp(results4.biasBack)
-
-disp('Bias Inc')
-disp(results1.biasInc)
-disp(results2.biasInc)
-disp(results4.biasInc)
-
-disp('RMSE Back')
-disp(results1.rmseBack)
-disp(results2.rmseBack)
-disp(results4.rmseBack)
-
-disp('RMSE Inc')
-disp(results1.rmseInc)
-disp(results2.rmseInc)
-disp(results4.rmseInc)
-
-disp('CNR')
-disp(results1.cnr)
-disp(results2.cnr)
-disp(results4.cnr)
-
-
-
-T = [results1;results2;results4];
-writetable(T,fullfile(resultsDir,tableName),...
-     'WriteRowNames',true);
+% results1 = struct2table(MetricsTV);
+% results2 = struct2table(MetricsSWTV);
+% results4 = struct2table(MetricsWFR);
+% 
+% disp('Bias Back')
+% disp(results1.biasBack)
+% disp(results2.biasBack)
+% disp(results4.biasBack)
+% 
+% disp('Bias Inc')
+% disp(results1.biasInc)
+% disp(results2.biasInc)
+% disp(results4.biasInc)
+% 
+% disp('RMSE Back')
+% disp(results1.rmseBack)
+% disp(results2.rmseBack)
+% disp(results4.rmseBack)
+% 
+% disp('RMSE Inc')
+% disp(results1.rmseInc)
+% disp(results2.rmseInc)
+% disp(results4.rmseInc)
+% 
+% disp('CNR')
+% disp(results1.cnr)
+% disp(results2.cnr)
+% disp(results4.cnr)
+% 
+% 
+% 
+% T = [results1;results2;results4];
+% writetable(T,fullfile(resultsDir,tableName),...
+%      'WriteRowNames',true);
