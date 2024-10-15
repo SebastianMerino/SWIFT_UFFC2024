@@ -7,7 +7,7 @@
 function [] = simulationMultiInc(BaseDir)
 
 addpath(genpath(pwd))
-simuNames = {'sim1','sim2'};
+simuNames = {'multiInc3','multiInc4'};
 % mkdir(BaseDir)
 
 % medium parameters
@@ -65,26 +65,28 @@ for iSim = 1:length(simuNames)
     switch iSim
         case 1
             background_std = 0.002;
+            inc_std = 0.008;
         case 2
             background_std = 0.008;
+            inc_std = 0.002;
     end
     background_alpha = 1;       % [dB/(MHz^y cm)]
     medium = addRegionSimu([],c0,rho0,background_std,...
         background_alpha,ones(Nx,Ny));
 
     % Inclusion
-    cz = 1e-2; cx = -0.8e-2;
+    cz = 1e-2; cx = -0.7e-2;
     r = 0.3e-2;
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
-    inc_alpha = 0.5; inc_std = 0.002;
+    inc_alpha = 0.5;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...
         inc_alpha,maskNodule);
 
     % Other inclusion
-    cz = 2e-2; cx = 0.8e-2;
+    cz = 2e-2; cx = 0.7e-2;
     r = 0.5e-2;
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
-    inc_alpha = 0.5; inc_std = 0.008;
+    inc_alpha = 0.5;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...
         inc_alpha,maskNodule);
 
@@ -93,7 +95,7 @@ for iSim = 1:length(simuNames)
     cz = 3e-2; cx = 0;
     r = 0.4e-2;
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
-    inc_alpha = 1; inc_std = 0.004;
+    inc_alpha = 1;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...
         inc_alpha,maskNodule);
 

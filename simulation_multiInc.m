@@ -1,8 +1,11 @@
 clear,clc
 
-dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14';
-refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-10-14';
+% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14';
+% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-10-14';
+dataDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation\24_10_14_v2';
+refDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation\24_10_14_ref';
+resultsDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
@@ -45,7 +48,7 @@ iAcq = 3;
 
 %% Setting up
 
-for iAcq = 1:3
+for iAcq = 1:length(targetFiles)
 % Regularization
 
 muBtv = 10^3.5; muCtv = 10^3.5;
