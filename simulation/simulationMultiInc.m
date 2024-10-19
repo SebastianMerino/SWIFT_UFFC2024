@@ -7,7 +7,7 @@
 function [] = simulationMultiInc(BaseDir)
 
 addpath(genpath(pwd))
-simuNames = {'multiInc3','multiInc4'};
+simuNames = {'multiInc1','multiInc2'};
 % mkdir(BaseDir)
 
 % medium parameters
@@ -18,7 +18,7 @@ rho0            = 1000;     % density [kg/m^3]
 source_f0       = 6.66e6;   % source frequency [Hz]
 source_amp      = 1e6;      % source pressure [Pa]
 source_cycles   = 3.5;      % number of toneburst cycles
-source_focus    = 40e-3;    % focal length [m]
+source_focus    = 20e-3;    % focal length [m]
 element_pitch   = 0.3e-3;   % pitch [m]
 element_width   = 0.25e-3;  % width [m]
 focal_number    = 2;
@@ -62,38 +62,35 @@ for iSim = 1:length(simuNames)
     rx = kgrid.y;
 
     % Background
-    switch iSim
-        case 1
-            background_std = 0.002;
-            inc_std = 0.008;
-        case 2
-            background_std = 0.008;
-            inc_std = 0.002;
-    end
+    background_std = 0.004;
     background_alpha = 1;       % [dB/(MHz^y cm)]
     medium = addRegionSimu([],c0,rho0,background_std,...
         background_alpha,ones(Nx,Ny));
 
     % Inclusion
-    cz = 1e-2; cx = -0.7e-2;
+    cz = 1.1e-2; cx = -0.6e-2;
     r = 0.3e-2;
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
-    inc_alpha = 0.5;
+    inc_alpha = 0.5; inc_std = background_std*4;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...
         inc_alpha,maskNodule);
 
     % Other inclusion
     cz = 2e-2; cx = 0.7e-2;
-    r = 0.5e-2;
+    r = 0.5e-2; 
+    if iAcq ==1
+        inc_std = background_std/4;
+    else
+        inc_std = background_std*4;
+    end
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
     inc_alpha = 0.5;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...
         inc_alpha,maskNodule);
 
-
     % Other inclusion
     cz = 3e-2; cx = 0;
-    r = 0.4e-2;
+    r = 0.4e-2; inc_std = background_std*4;
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
     inc_alpha = 1;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...

@@ -1,8 +1,11 @@
 clear,clc
 
-dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_layered';
-refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-09-18';
+% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_layered';
+% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-09-18';
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_layered';
+refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+resultsDir = 'P:\smerino\UFFC2024results';
 
 [~,~] = mkdir(resultsDir);
 
@@ -20,9 +23,7 @@ overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
 % Weight parameters
-muB = 10^3; muC = 10^0;
 ratioCutOff = 10;
-order = 5;
 reject = 0.1;
 extension = 3;
 
@@ -36,21 +37,18 @@ attRange = [0.4,1.1];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
-
 % GT
-groundTruthTop = [0.5,0.5,0.5];
-groundTruthBottom = [1,1,1];
+groundTruthTop = [0.5,0.5,0.5,0.75,0.75];
+groundTruthBottom = [1,1,1,0.75,0.75];
 
 % Region for attenuation imaging
 x_inf = -1.5; x_sup = 1.5;
 z_inf = 0.4; z_sup = 3.7;
 
-
+iAcq = 1;
 %% For looping
-% figure('Units','centimeters', 'Position',[5 5 25 8]);
-% tl = tiledlayout(2,5, "Padding","tight");
 
-for iAcq = 1:3
+for iAcq = 4:4
 load(fullfile(dataDir,targetFiles(iAcq).name));
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
@@ -58,6 +56,7 @@ dx = x(2)-x(1);
 dz = z(2)-z(1);
 x = x*1e2; % [cm]
 z = z*1e2; % [cm]
+z = z-3.5*medium.sound_speed_ref/6.66e6*100/4;
 
 sam1 = rf(:,:,1);
 
@@ -67,22 +66,24 @@ switch iAcq
         % Regularization
         muBtv = 10^4; muCtv = 10^4;
         muBswtv = 10^3; muCswtv = 10^2;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^2;
         muBwfr = 10^3.5; muCwfr = 10^2;
 
     case 2
         % Regularization
         muBtv = 10^4; muCtv = 10^4;
         muBswtv = 10^3; muCswtv = 10^0;
-        muBtvl1 = 10^4; muCtvl1 = 10^1.5;
         muBwfr = 10^4; muCwfr = 10^1.5;
 
     case 3
         % Regularization
         muBtv = 10^4; muCtv = 10^4;
         muBswtv = 10^3; muCswtv = 10^0.5;
-        muBtvl1 = 10^4; muCtvl1 = 10^1.5;
         muBwfr = 10^4; muCwfr = 10^1.5;
+    case 4
+        % Regularization
+        muBtv = 10^4; muCtv = 10^4;
+        muBswtv = 10^3.5; muCswtv = 10^0;
+        muBwfr = 10^4; muCwfr = 10^0;
 end
 %% Cropping and finding sample sizes
 
@@ -114,16 +115,6 @@ z_ACS = z(z0p+ nz/2);
 m  = length(z0p);
 
 %% BW and spectrogram
-% [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
-% meanSpectrum = mean(pxx,2);
-% meanSpectrum = db(meanSpectrum./max(meanSpectrum));
-% figure,plot(fpxx/1e6,meanSpectrum)
-% xline([freq_L,freq_H]/1e6)
-% xlim([0 15])
-% xlabel('Frequency [MHz]')
-% ylabel('Magnitude')
-% grid on
-
 % Frequency samples
 NFFT = 2^(nextpow2(nz/2)+2);
 band = (0:NFFT-1)'/NFFT * fs;   % [Hz] Band of frequencies
@@ -289,24 +280,6 @@ r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omit
 r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsSWTV(iAcq) = r;
 
-%% TVL1
-[Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBtvl1,muCtvl1,m,n,tol,mask(:));
-BRTVL1 = reshape(Bn*NptodB,m,n);
-CRTVL1 = reshape(Cn*NptodB,m,n);
-
-axialTVL1 = mean(BRTVL1,2);
-AttInterp = interp2(X,Z,BRTVL1,Xq,Zq);
-r.meanTop = mean(AttInterp(top),"omitnan");
-r.stdTop = std(AttInterp(top),"omitnan");
-r.meanBottom = mean(AttInterp(bottom),"omitnan");
-r.stdBottom = std(AttInterp(bottom),"omitnan");
-r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
-r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
-r.rmseTop = sqrt(mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,"omitnan"));
-r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omitnan"));
-r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
-MetricsTVL1(iAcq) = r;
-
 %% SWIFT
 % First iteration
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBwfr,muCwfr,m,n,tol,mask(:));
@@ -375,7 +348,7 @@ title('RSLD')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 hold on 
-yline(2.05, 'w--', 'LineWidth',1.5)
+yline(2, 'w--', 'LineWidth',1.5)
 hold off
 
 t1 = nexttile; 
@@ -386,7 +359,7 @@ title('SWTV-ACE')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 hold on 
-yline(2.05, 'w--', 'LineWidth',1.5)
+yline(2, 'w--', 'LineWidth',1.5)
 hold off
 
 % t1 = nexttile; 
@@ -407,24 +380,16 @@ c.Label.String = 'ACS [db/cm/MHz]';
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 hold on 
-yline(2.05, 'w--', 'LineWidth',1.5)
+yline(2, 'w--', 'LineWidth',1.5)
 hold off
 
 fontsize(gcf,8,'points')
 %%
 figure('Units','centimeters', 'Position',[5 5 10 4])
 tl = tiledlayout(1,2, "Padding","tight");
-% t1 = nexttile;
-% imagesc(x,z,Bmode,dynRange)
-% axis equal
-% xlim([x_ACS(1) x_ACS(end)]),
-% ylim([z_ACS(1) z_ACS(end)]),
-% colormap(t1,gray)
-% colorbar(t1, 'eastoutside')
-% title('Bmode')
 
 t2 = nexttile; 
-imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
+imagesc(x_ACS,z_ACS,bscMap, bsRange)
 colormap(t2,parula)
 axis image
 title('TVL1')
@@ -463,7 +428,6 @@ xlim([z_ACS(1) z_ACS(end)])
 %title('Axial profile')
 xlabel('Axial [cm]')
 ylabel('ACS [dB/cm/MHz]')
-% legend({'RSLD','SWTV-ACE','TVL1','SWIFT'}, 'Location','northwest') 
 legend({'RSLD','SWTV-ACE','SWIFT'}, 'Location','northwest') 
 
 %%
@@ -475,41 +439,35 @@ end
 %%
 results1 = struct2table(MetricsTV);
 results2 = struct2table(MetricsSWTV);
-results3 = struct2table(MetricsTVL1);
 results4 = struct2table(MetricsWFR);
 
 disp('Bias Top')
 disp(results1.biasTop)
 disp(results2.biasTop)
-disp(results3.biasTop)
 disp(results4.biasTop)
 
 disp('Bias Bottom')
 disp(results1.biasBottom)
 disp(results2.biasBottom)
-disp(results3.biasBottom)
 disp(results4.biasBottom)
 
 disp('RMSE Top')
 disp(results1.rmseTop)
 disp(results2.rmseTop)
-disp(results3.rmseTop)
 disp(results4.rmseTop)
 
 disp('RMSE Bottom')
 disp(results1.rmseBottom)
 disp(results2.rmseBottom)
-disp(results3.rmseBottom)
 disp(results4.rmseBottom)
 
 disp('CNR')
 disp(results1.cnr)
 disp(results2.cnr)
-disp(results3.cnr)
 disp(results4.cnr)
 
 
-T = [results1;results2;results3;results4];
+T = [results1;results2;results4];
 writetable(T,fullfile(resultsDir,tableName),...
      'WriteRowNames',true);
 

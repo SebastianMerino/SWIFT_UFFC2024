@@ -6,7 +6,7 @@
 function [] = simulationFocusedLayeredAtt(BaseDir)
 
 addpath(genpath(pwd))
-simuNames = {'layered1','layered2','layered3'};
+simuNames = {'layered1','layered2','layered3','layered4','layered5'};
 % mkdir(BaseDir)
 
 % medium parameters
@@ -17,7 +17,7 @@ rho0            = 1000;     % density [kg/m^3]
 source_f0       = 6.66e6;   % source frequency [Hz]
 source_amp      = 1e6;      % source pressure [Pa]
 source_cycles   = 3.5;      % number of toneburst cycles
-source_focus    = 40e-3;    % focal length [m]
+source_focus    = 20e-3;    % focal length [m]
 element_pitch   = 0.3e-3;   % pitch [m]
 element_width   = 0.25e-3;  % width [m]
 focal_number    = 4;
@@ -39,7 +39,7 @@ cfl             = 0.3;      % CFL number, could be 0.3 or 0.5
 
 %% For looping simulations
 
-for iSim = 1:length(simuNames)
+for iSim = 4:length(simuNames)
     %% GRID
 
     % calculate the grid spacing based on the PPW and F0
@@ -60,6 +60,9 @@ for iSim = 1:length(simuNames)
     rz = kgrid.x - translation(1);
     rx = kgrid.y;
 
+    background_alpha = 0.5;       % [dB/(MHz^y cm)]
+    layer_alpha = 1;
+
     % Background
     switch iSim
         case 1
@@ -71,15 +74,23 @@ for iSim = 1:length(simuNames)
         case 3
             background_std = 0.008;
             layer_std = 0.002;
+        case 4
+            background_std = 0.002;
+            layer_std = 0.008;
+            background_alpha = 0.75;       % [dB/(MHz^y cm)]
+            layer_alpha = 0.75;
+        case 5
+            background_std = 0.008;
+            layer_std = 0.002;
+            background_alpha = 0.75;       % [dB/(MHz^y cm)]
+            layer_alpha = 0.75;
     end
 
-    background_alpha = 0.5;       % [dB/(MHz^y cm)]
     medium = addRegionSimu([],c0,rho0,background_std,...
         background_alpha,ones(Nx,Ny));
     
     % Bottom
     maskLayer = rz>20e-3;
-    layer_alpha = 1;
     medium = addRegionSimu(medium,c0,rho0,layer_std,...
         layer_alpha,maskLayer);
 

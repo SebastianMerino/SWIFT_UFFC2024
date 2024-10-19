@@ -3,17 +3,15 @@
 % For Journal.
 % ====================================================================== %
 setup,
-dataDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
-refDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-09-18';
+% dataDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-09-18';
 
-% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
-% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
-% resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-02-20\BS_8_12';
+dataDir = ['C:\Users\smerino.C084288\Documents\Datasets\Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
+refDir = ['C:\Users\smerino.C084288\Documents\Datasets\Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+resultsDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\JournalResults';
 
 rawFiles = dir([dataDir,'\*.rf']);
 targetFiles = dir([dataDir,'\*.mat']);

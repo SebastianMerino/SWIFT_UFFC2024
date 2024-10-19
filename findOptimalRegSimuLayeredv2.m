@@ -2,34 +2,31 @@
 % Script for finding optimal reg for data with an inclusion 
 % Created on Jan 31, 2024
 % ====================================================================== %
-clc, clear,
 
-% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14_multiInc';
-% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14_ref';
-% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\multiInc\opt';
-dataDir = 'P:\smerino\simulation_acs\rf_data\24_10_14_multiInc';
-refDir = 'P:\smerino\simulation_acs\rf_data\24_10_14_ref';
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\24_04_04_layered'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\24_04_25_ref'];
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_layered';
+refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
 resultsDir = 'P:\smerino\UFFC2024results\opt';
-
 mkdir(resultsDir);
 
 targetFiles = dir([dataDir,'\rf*.mat']);
+% targetFiles = targetFiles(4:5);
 refFiles = dir([refDir,'\rf*.mat']);
+tableName = 'simuLayered.xlsx';
 
 %%
+% SETTING PARAMETERS
 blocksize = 8;     % Block size in wavelengths
-freq_L = 3.5e6; freq_H = 8.5e6; 
+freq_L = 3.5e6; freq_H = 8.5e6;
+
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
-% New simu
-groundTruthBack = [0.5,0.5,0.5];
-groundTruthInc = [1,1,1];
-
 % Weight parameters
-muB = 10^3; muC = 10^0;
 ratioCutOff = 10;
-order = 5;
 reject = 0.1;
 extension = 3;
 
@@ -38,20 +35,22 @@ aSNR = 5; bSNR = 0.09;
 desvMin = 15;
 
 % Plotting
-dynRange = [-40,0];
+dynRange = [-50,0];
+attRange = [0.4,1.1];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
-% attRange = [0.6 1.7];
-attRange = [0.4 1.1];
+
+% GT
+groundTruthTop = [0.5,0.5,0.5,0.75,0.75];
+groundTruthBottom = [1,1,1,0.75,0.75];
 
 % Region for attenuation imaging
-x_inf = -1.5; x_sup = 5;
+x_inf = -1.5; x_sup = 1.5;
 z_inf = 0.4; z_sup = 3.7;
 
-iAcq = 1;
 %% Setting up
 
-for iAcq = 5:5 % 1:length(targetFiles)
+for iAcq = 4:length(targetFiles)
 load(fullfile(dataDir,targetFiles(iAcq).name));
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
@@ -59,6 +58,7 @@ dx = x(2)-x(1);
 dz = z(2)-z(1);
 x = x*1e2; % [cm]
 z = z*1e2; % [cm]
+z = z-3.5*medium.sound_speed_ref/6.66e6*100/4;
 
 sam1 = rf(:,:,1);
 dynRange = [-50,0];
@@ -66,8 +66,7 @@ Bmode = db(hilbert(sam1));
 Bmode = Bmode - max(Bmode(:));
 acsMedium = medium.alpha_coeff;
 
-% Correction
-% z = z-3.5*medium.sound_speed_ref/6.66e6*100/2;
+
 %% Cropping and finding sample sizes
 
 % Limits for ACS estimation
@@ -104,9 +103,8 @@ m  = length(z0p);
 % BW from spectrogram
 [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
 meanSpectrum = mean(pxx,2);
-meanSpectrum = db(meanSpectrum./max(meanSpectrum));
 % [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
-figure,plot(fpxx/1e6,meanSpectrum)
+figure,plot(fpxx/1e6,db(meanSpectrum./max(meanSpectrum)))
 xline([freq_L,freq_H]/1e6)
 xlabel('Frequency [MHz]')
 ylabel('Magnitude')
@@ -187,19 +185,6 @@ for jj=1:n
     end
 end
 
-%% Setting up
-
-
-% System of equations
-b = (log(Sp) - log(Sd)) - (compensation);
-A1 = kron( 4*L*f , speye(m*n) );
-A2 = kron( ones(size(f)) , speye(m*n) );
-A = [A1 A2];
-tol = 1e-3;
-clear mask
-mask = ones(m,n,p);
-
-
 %% Ideal ACS
 dxMedium = rx(1,2) - rx(1,1);
 bsMedium = ([blocksize blocksize*ratio_zx]*wl/dxMedium);
@@ -236,6 +221,19 @@ title('Ideal')
 c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
 
+%% Setting up
+% System of equations
+b = (log(Sp) - log(Sd)) - (compensation);
+A1 = kron( 4*L*f , speye(m*n) );
+A2 = kron( ones(size(f)) , speye(m*n) );
+A = [A1 A2];
+tol = 1e-3;
+clear mask
+mask = ones(m,n,p);
+[X,Z] = meshgrid(x_ACS,z_ACS);
+[Xq,Zq] = meshgrid(x,z);
+top = Zq < 1.9; % 0.1 cm interface
+bottom = Zq > 2.1;
 
 %% RSLD
 muB = 10.^(1:0.5:4);
@@ -248,7 +246,7 @@ for mmB = 1:length(muB)
         toc
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
-        
+
         RMSE = sqrt(mean((acsIdeal - BR).^2,'all','omitnan') );
         if RMSE<minRMSE
             minRMSE = RMSE;
@@ -280,6 +278,14 @@ title(['RSLD, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
+AttInterp = interp2(X,Z,BRopt,Xq,Zq);
+r.meanTop = mean(AttInterp(top),"omitnan");
+r.stdTop = std(AttInterp(top),"omitnan");
+r.meanBottom = mean(AttInterp(bottom),"omitnan");
+r.stdBottom = std(AttInterp(bottom),"omitnan");
+r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
+r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 r.muBopt = log10(muBopt);
 r.muCopt = log10(muCopt);
 r.method = 'RSLD';
@@ -289,7 +295,6 @@ MetricsTV(iAcq) = r;
 %% British Columbia Approach
 envelope = abs(hilbert(sam1));
 
-% Weight map from SNR
 SNR = zeros(m,n);
 for jj=1:n
     for ii=1:m
@@ -304,12 +309,13 @@ for jj=1:n
         SNR(ii,jj) = mean(temp)/std(temp);
     end
 end
+
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
 w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
-% Finding optimal reg parameters
-muB = 10.^(2:0.5:3);
+
+muB = 10.^(2:0.5:3.5);
 muC = 10.^(0:0.5:3);
 
 minRMSE = 100;
@@ -322,6 +328,7 @@ for mmB = 1:length(muB)
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
         RMSE = sqrt(mean((acsIdeal - BR).^2,'all','omitnan') );
+
         if RMSE<minRMSE
             minRMSE = RMSE;
             muBopt = muB(mmB);
@@ -346,7 +353,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['SWTV-ACE, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
+title(['RSLD, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -354,11 +361,18 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['SWTV-ACE, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
+title(['RSLD, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
-
+AttInterp = interp2(X,Z,BRopt,Xq,Zq);
+r.meanTop = mean(AttInterp(top),"omitnan");
+r.stdTop = std(AttInterp(top),"omitnan");
+r.meanBottom = mean(AttInterp(bottom),"omitnan");
+r.stdBottom = std(AttInterp(bottom),"omitnan");
+r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
+r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 r.muBopt = log10(muBopt);
 r.muCopt = log10(muCopt);
 r.method = 'SWTV';
@@ -375,7 +389,7 @@ for mmB = 1:length(muB)
         % First iteration
         [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));
         bscMap = reshape(Cn*NptodB,m,n);
-        
+
         % Weight map
         w = (1-reject)*(abs(bscMap)<ratioCutOff)+reject;
         wExt = movmin(w,extension);
@@ -404,7 +418,6 @@ for mmB = 1:length(muB)
     end
 end
 
-%%
 figure('Units','centimeters', 'Position',[5 5 22 6]);
 tl = tiledlayout(1,3, "Padding","tight");
 title(tl,'Weighted Fidelity and Regularization') 
@@ -433,19 +446,27 @@ title(['RSLD-SWIFT, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
+AttInterp = interp2(X,Z,BRopt,Xq,Zq);
+r.meanTop = mean(AttInterp(top),"omitnan");
+r.stdTop = std(AttInterp(top),"omitnan");
+r.meanBottom = mean(AttInterp(bottom),"omitnan");
+r.stdBottom = std(AttInterp(bottom),"omitnan");
+r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
+r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 r.muBopt = log10(muBopt);
 r.muCopt = log10(muCopt);
 r.method = 'SWIFT';
 r.simu = iAcq;
+r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsSWIFT(iAcq) = r;
 
 %%
-save_all_figures_to_directory(resultsDir,['simMulltiInc',num2str(iAcq),'Figure']);
+save_all_figures_to_directory(resultsDir,['simLayered',num2str(iAcq),'Figure']);
 close all
 
 end
-%%
-tableName = 'multiInc.xlsx';
+
 results1 = struct2table(MetricsTV);
 results2 = struct2table(MetricsSWTV);
 results3 = struct2table(MetricsSWIFT);

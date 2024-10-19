@@ -1,8 +1,11 @@
 clear,clc
 
-dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
-refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-09-18';
+% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
+% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-09-18';
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_10_14_inc';
+refDir = 'P:\smerino\simulation_acs\rf_data\24_10_14_ref';
+resultsDir = 'P:\smerino\UFFC2024results';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
@@ -69,6 +72,7 @@ dx = x(2)-x(1);
 dz = z(2)-z(1);
 x = x*1e2; % [cm]
 z = z*1e2; % [cm]
+z = z-3.5*medium.sound_speed_ref/6.66e6*100*0.5;
 
 sam1 = rf(:,:,1);
 Bmode = db(hilbert(sam1));
@@ -202,7 +206,7 @@ clear mask
 mask = ones(m,n,p);
 
 % Creating masks and ideal map
-rInc = 0.7; c1x = 0; c1z = 2.05;
+rInc = 0.7; c1x = 0; c1z = 2;
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
 inclusion = (Xq.^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
