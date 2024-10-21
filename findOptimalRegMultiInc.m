@@ -2,13 +2,13 @@
 % Script for finding optimal reg for data with an inclusion 
 % Created on Jan 31, 2024
 % ====================================================================== %
-clc, clear,
+setup,
 
 % dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14_multiInc';
 % refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14_ref';
 % resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\multiInc\opt';
-dataDir = 'P:\smerino\simulation_acs\rf_data\24_10_14_multiInc';
-refDir = 'P:\smerino\simulation_acs\rf_data\24_10_14_ref';
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_10_19_multiInc';
+refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
 resultsDir = 'P:\smerino\UFFC2024results\opt';
 
 mkdir(resultsDir);
@@ -29,7 +29,6 @@ groundTruthInc = [1,1,1];
 % Weight parameters
 muB = 10^3; muC = 10^0;
 ratioCutOff = 10;
-order = 5;
 reject = 0.1;
 extension = 3;
 
@@ -51,7 +50,7 @@ z_inf = 0.4; z_sup = 3.7;
 iAcq = 1;
 %% Setting up
 
-for iAcq = 5:5 % 1:length(targetFiles)
+for iAcq = 1:length(targetFiles)
 load(fullfile(dataDir,targetFiles(iAcq).name));
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
@@ -282,7 +281,7 @@ c.Label.String = 'BS log ratio [dB]';
 
 r.muBopt = log10(muBopt);
 r.muCopt = log10(muCopt);
-r.method = 'RSLD';
+r.method = {'RSLD'};
 r.simu = iAcq;
 MetricsTV(iAcq) = r;
 
@@ -361,7 +360,7 @@ c.Label.String = 'BS log ratio [dB]';
 
 r.muBopt = log10(muBopt);
 r.muCopt = log10(muCopt);
-r.method = 'SWTV';
+r.method = {'SWTV'};
 r.simu = iAcq;
 MetricsSWTV(iAcq) = r;
 
@@ -435,7 +434,7 @@ c.Label.String = 'BS log ratio [dB]';
 
 r.muBopt = log10(muBopt);
 r.muCopt = log10(muCopt);
-r.method = 'SWIFT';
+r.method = {'SWIFT'};
 r.simu = iAcq;
 MetricsSWIFT(iAcq) = r;
 
