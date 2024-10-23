@@ -2,7 +2,7 @@
 setup,
 baseDir = 'C:\Users\sebas\Documents\Data\Attenuation\Thyroid_Data_PUCP_UTD';
 refsDir = 'C:\Users\sebas\Documents\Data\Attenuation\REFERENCES';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-09-18';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\clinical';
 
 tableName = 'clinical.xlsx';
 T = readtable('params.xlsx');
@@ -17,9 +17,7 @@ overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
 % Weight parameters
-muB = 10^3; muC = 10^0;
 ratioCutOff = 10;
-order = 5;
 reject = 0.1;
 extension = 3;
 
@@ -59,21 +57,17 @@ BmodeFull = db(hilbert(sam1));
 BmodeFull = BmodeFull - max(BmodeFull(:));
 
 if iRoi == 1
-    rect = [1.03; 0.49; 1.6; 1.69]; % Previous rectangle
-    % reg FINAL VERSION
+    % rect = [1.03; 0.49; 1.6; 1.69]; % Previous rectangle
+    rect = [1.03; 0.49; 1.6; 1.65]; % Previous rectangle
     muBtv = 10^2.5; muCtv = 10^2.5;
     muBswtv = 10^2.5; muCswtv = 10^-0.5;
     muBswift = 10^3; muCswift = 10^0.5;
 else
-    rect = [2.63; 0.49; 1.6; 1.69]; % Previous rectangle
-    % rect = [2.63; 0.4; 1.6; 1.8];
+    % rect = [2.63; 0.49; 1.6; 1.69]; % Previous rectangle
+    rect = [2.63; 0.49; 1.6; 1.65]; % Previous rectangle
     muBtv = 10^3; muCtv = 10^3;
     muBswtv = 10^3; muCswtv = 10^0;
     muBswift = 10^3.5; muCswift = 10^1;
-    %     muBtv = 10^2.5; muCtv = 10^2.5;
-    % muBswtv = 10^2.5; muCswtv = 10^-0.5;
-    % muBswift = 10^3; muCswift = 10^0.5;
-
 end
 % hold on
 % rectangle('Position',rect)
@@ -251,7 +245,7 @@ CRSWTV = reshape(Cn*NptodB,m,n);
 bscMap = reshape(Cn*NptodB,m,n);
 
 % Weight map
-w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+w = (1-reject)*(abs(bscMap)<ratioCutOff)+reject;
 wExt = movmin(w,extension);
 
 % Weight matrices and new system

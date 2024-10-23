@@ -5,7 +5,7 @@
 setup,
 baseDir = 'C:\Users\sebas\Documents\Data\Attenuation\Thyroid_Data_PUCP_UTD';
 refsDir = 'C:\Users\sebas\Documents\Data\Attenuation\REFERENCES';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\clinical';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-09-18';
 
 tableName = 'clinical.xlsx';
 T = readtable('params.xlsx');
@@ -15,11 +15,12 @@ if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 blocksize = 8;     % Block size in wavelengths
 fixedBW = true;
 ratio = db2mag(-30);
-freq_L = 3.5e6; freq_H = 8e6;
+freq_L = 3e6; freq_H = 9e6;
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
 % Weight parameters
+muB = 10^3; muC = 10^0;
 ratioCutOff = 10;
 reject = 0.1;
 extension = 3;
@@ -39,9 +40,11 @@ dynRange = [-50,0];
 attRange = [0.2,2];
 bsRange = [-15 15];
 
-dataCols = zeros(3,12);
+dataCols = zeros(2,16);
 %%
-for iAcq = 1:3
+iAcq = 2;
+
+%%
 patient = num2str(T.patient(iAcq));
 class = T.class(iAcq);
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
@@ -52,7 +55,7 @@ out =lectura_OK(samPath);
 sam1 = out.RF(:,:,1);
 fs = out.fs;
 fc = out.fc;
-x = out.x; z = out.z;
+x = out.x*1e2; z = out.z*1e2;
 fprintf("\n Selecting acq. no. %i, patient %s\n",iAcq,patient);
 
 
@@ -95,62 +98,45 @@ else
 
 end
 
-%%
-
-% Limits for ACS estimation
-ind_x = x_inf <= xFull & xFull <= x_sup;
-ind_z = z_inf <= zFull & zFull <= z_sup;
-roi = ind_x.*ind_z';
-x = xFull(ind_x);
-z = zFull(ind_z);
-sam1 = sam1(ind_z,ind_x);
-
 % Wavelength size
 c0 = 1540;
 wl = c0/mean([freq_L freq_H]);   % Wavelength (m)
 
-% Lateral samples
-wx = round(blocksize*wl*(1-overlap_pc)/dx);  % Between windows
-nx = round(blocksize*wl/dx);                 % Window size
-x0 = 1:wx:length(x)-nx;
-x_ACS = x(1,x0+round(nx/2));
-n  = length(x0);
+%%
+blockParams.xInf = x_inf;
+blockParams.xSup = x_sup;
+blockParams.zInf = z_inf;
+blockParams.zSup = z_sup;
+blockParams.blocksize = [16 24]*wl;
+blockParams.freqL = 0e6;
+blockParams.freqH = 20e6;
+blockParams.overlap = 0.8;
+%% SLD
+[Sp,Sd,x_ACS,z_ACS,f] = getSld(sam1,x,z,fs,blockParams);
+[m,n,p] = size(Sp);
 
-% Axial samples
-wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
-L = (nz/2)*dz*100;   % (cm)
-z0p = 1:wz:length(z)-nz;
-z0d = z0p + nz/2;
-z_ACS = z(z0p+ nz/2);
-m  = length(z0p);
-
-%% BW from spectrogram
-[pxx,fpxx] = pwelch(sam1-mean(sam1),nz,nz-wz,nz,fs);
-meanSpectrum = mean(pxx,2);
-meanSpectrum(1) = 0;
-% figure,
-% plot(fpxx/1e6,db(meanSpectrum/max(meanSpectrum))),grid on
-if ~fixedBW
-    [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
-end
-
-NFFT = 2^(nextpow2(nz/2)+2);
-band = (0:NFFT-1)'/NFFT * fs;   % [Hz] Band of frequencies
-rang = band > freq_L & band < freq_H ;   % useful frequency range
-f  = band(rang)*1e-6; % [MHz]
-p = length(f);
+L = (z_ACS(2) - z_ACS(1))/(1 - blockParams.overlap)/2;   % (cm)
 
 % Plot region of interest B-mode image
 Bmode = db(hilbert(sam1));
 Bmode = Bmode - max(Bmode(:));
+%%
+meanSpectrum = db((abs(Sp)+ abs(Sd))/2);
+meanSpectrum = meanSpectrum - max(meanSpectrum(:));
+allSpectrum = reshape(permute(meanSpectrum,[3 2 1]),p,m*n);
+allSpectrum = allSpectrum - max(allSpectrum);
+figure,
+plot(f,allSpectrum)
+grid on
+xline([3.5,8])
+%%imagesc(meanSpectrum(:,:,50))
 
-fprintf('Frequency range: %.2f - %.2f MHz\n',freq_L*1e-6,freq_H*1e-6)
-fprintf('Blocksize in wavelengths: %i\n',blocksize)
-fprintf('Blocksize x: %.2f mm, z: %.2f mm\n',nx*dx*1e3,nz*dz*1e3)
-fprintf('Blocksize in pixels nx: %i, nz: %i\n',nx,nz);
-fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
+%%
 
+% nodSpectrum = squeeze(mean(mean(meanSpectrum(4:7,12:end,:),1),2));
+% figure,
+% plot(f,nodSpectrum)
+% grid on
 %% Generating Diffraction compensation
 
 % Generating references
@@ -267,14 +253,18 @@ wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 m,n,tol,mask(:),wSNR);
 BRSWTV = reshape(Bn*NptodB,m,n);
 
+%% TV + L1 (no weights)
+[Bn,~] = optimAdmmTvTikhonov(A1,A2,b(:),muBtvl1,muCtvl1,m,n,tol,mask(:));
+BRTVL1 = reshape(Bn*NptodB,m,n);
+
 %% SWIFT
 % First iteration
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBswift,muCswift,m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);
 
 % Weight map
+% w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
 w = (1-reject)*(abs(bscMap)<ratioCutOff)+reject;
-% w = (1-reject)*(1 ./ (1 + (bscMap./ratioCutOff).^10))+reject;
 wExt = movmin(w,extension);
 
 % Weight matrices and new system
@@ -328,18 +318,20 @@ load(fullfile('newMasks',[patient,'.mat']));
 maskNoduleACS = interp2(X,Z,maskNodule,Xq,Zq, 'nearest');
 maskThyroidACS = interp2(X,Z,maskThyroid,Xq,Zq, 'nearest');
 
-se = strel('diamond',2);
+se = strel('diamond',1);
 maskThyroidACS = imerode(maskThyroidACS,se);
 maskNoduleACS = imerode(maskNoduleACS,se);
-figure, imagesc(x_ACS,z_ACS,maskThyroidACS|maskNoduleACS)
+%figure, imagesc(x_ACS,z_ACS,maskThyroidACS|maskNoduleACS)
 
 patCol(iAcq) = {patient}; 
 classCol(iAcq) = {class};
 dataCols(iAcq,:) = [mean(BRTV(maskNoduleACS)), std(BRTV(maskNoduleACS)),...
     mean(BRSWTV(maskNoduleACS)), std(BRSWTV(maskNoduleACS)),...
+    mean(BRTVL1(maskNoduleACS)), std(BRTVL1(maskNoduleACS)),...
     mean(BSWIFT(maskNoduleACS)), std(BSWIFT(maskNoduleACS)), ...
     mean(BRTV(maskThyroidACS)), std(BRTV(maskThyroidACS)),...
     mean(BRSWTV(maskThyroidACS)), std(BRSWTV(maskThyroidACS)),...
+    mean(BRTVL1(maskThyroidACS)), std(BRTVL1(maskThyroidACS)),...
     mean(BSWIFT(maskThyroidACS)), std(BSWIFT(maskThyroidACS))];
 
 
@@ -415,11 +407,53 @@ hColor.Label.String = 'ACS [dB/cm/MHz]';
 colormap(t1,'gray')
 fontsize(gcf,9,'points')
 
+
+%%
+figure('Units','centimeters', 'Position',[5 5 14 8])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','tight')
+
+t1 = nexttile;
+imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
+title('B-mode')
+ylim([0.1, 3])
+hold on
+contour(xFull,zFull,roi,1,'w--')
+hold off
+xlabel('Lateral [cm]')
+ylabel('Axial [cm]')
+hBm = colorbar;
+hBm.Label.String = 'dB';
+hBm.Location = 'northoutside';
+
+nexttile,
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BRTVL1,dynRange,attRange,0.5,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+title('TVL1')
+hColor.Label.String = 'dB/cm/MHz';
+hColor.Location = 'northoutside';
+hColor.Ticks = [0.4,0.8,1.2,1.6,2];
+ylim([0.1, 3])
+hold on
+contour(xFull,zFull,roi,1,'w--')
+contour(xFull,zFull,maskThyroid & roi,1,'w--')
+hold off
+xlabel('x [cm]')
+% ylabel('z [cm]')
+
+% hColor.Layout.Tile = 'east';
+% hColor.Label.String = 'ACS [dB/cm/MHz]';
+colormap(t1,'gray')
+fontsize(gcf,9,'points')
+
+
+% ylabel('z [cm]')
+
+
+
 %%
 save_all_figures_to_directory(resultsDir,['pat',patient,'fig'],'svg');
 close all
 
-end
 
 %%
 infoTable = table(patCol',classCol',...
@@ -428,9 +462,11 @@ dataTable = array2table(dataCols,...
     'VariableNames',{ ...
     'nod-TV-mean','nod-TV-std', ...
     'nod-SWTV-mean','nod-SWTV-std', ...
+    'nod-TVL1-mean','nod-TVL1-std', ...
     'nod-SWIFT-mean','nod-SWIFT-std', ...
     'thy-TV-mean','thy-TV-std', ...
     'thy-SWTV-mean','thy-SWTV-std', ...
+    'thy-TVL1-mean','thy-TVL1-std', ...
     'thy-SWIFT-mean','thy-SWIFT-std', ...
     });
 

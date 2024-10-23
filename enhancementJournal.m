@@ -21,7 +21,7 @@ overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
 %% Loading case
-iAcq = 2; % 1,4,6
+for iAcq = 1:3;
 patient = num2str(T.patient(iAcq));
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
 refDir = fullfile(refsDir,T.reference{iAcq});
@@ -111,8 +111,9 @@ grid on
 
 
 %%
-fc = 5E6;
-[bFilt,aFilt] = butter(1,[fc-0.5E6 fc+0.5E6]/fs*2, "bandpass");
+fc = 8E6;
+freqTol = 0.5e6;
+[bFilt,aFilt] = butter(2,[fc-freqTol fc+freqTol]/fs*2, "bandpass");
 samFilt = filtfilt(bFilt,aFilt,sam1);
 [pxx,fpxx] = pwelch(samFilt,300,250,512,fs);
 
@@ -121,7 +122,7 @@ BmodeFilt = BmodeFilt - max(BmodeFilt(:));
 
 figure('Units','centimeters', 'Position',[5 5 18 6]),
 tiledlayout(1,2)
-nexttile, imagesc(x,z,BmodeFilt,[-60 0])
+nexttile, imagesc(x,z,BmodeFilt,[-70 0])
 axis image
 colormap(gray)
 colorbar('westoutside')
@@ -130,18 +131,30 @@ title('Bmode')
 switch iAcq
     case 1
         z0 = 1.8; zf = 1.9;
-        % z0 = 2; zf = 2.2;
     case 2
         z0 = 2.7; zf = 3;
     case 3
-        % z0 = 1.3; zf = 2;
-        z0 = 1.5; zf = 2.5;
+        z0 = 1.6; zf = 2.5;
+end
+switch iAcq
+    case 1
+        x0Inc = 1.5; xfInc = 3;
+        x0Out = 0.2; xfOut = 0.9;
+    case 2
+        x0Inc = 2.3; xfInc = 3;
+        x0Out = 0.6; xfOut = 1.6;
+    case 3
+        x0Inc = 1.4; xfInc = 2.1;
+        x0Out = 2.3; xfOut = 3.2;
     otherwise
         
-        % z0 = 2.2; zf = 2.5;
 end
 yline(z0, 'b--','LineWidth',1.5)
 yline(zf, 'b--','LineWidth',1.5)
+xline(x0Inc, 'g--', 'LineWidth',2)
+xline(xfInc, 'g--', 'LineWidth',2)
+xline(x0Out, 'r--', 'LineWidth',2)
+xline(xfOut, 'r--', 'LineWidth',2)
 
 nexttile,plot(fpxx/1e6,mean(pxx,2))
 title('Spectrum')
@@ -152,21 +165,7 @@ grid on
 [~,Z] = meshgrid(x,z);
 mask = Z>z0 & Z<zf;
 
-switch iAcq
-    case 1
-        x0Inc = 1.5; xfInc = 3;
-        % x0Inc = 2; xfInc = 3.1;
-        x0Out = 0.2; xfOut = 0.9;
-    case 2
-        x0Inc = 2.3; xfInc = 3;
-        x0Out = 0.6; xfOut = 1.6;
-    case 3
-        x0Inc = 1.4; xfInc = 2.1;
-        % x0Out = 2.5; xfOut = 3.5;
-        x0Out = 2.3; xfOut = 3.2;
-    otherwise
-        
-end
+
 BmodeFilt(~mask) = NaN;
 latProfile = median(BmodeFilt,"omitmissing");
 figure('Units','centimeters', 'Position',[5 5 9 6]),
@@ -190,12 +189,10 @@ switch iAcq
         incDiameter = 1.3; % before 1.2
     case 3
         incDiameter = 0.85;
-    otherwise
-        % 
-        % 
 end
+disp("Thyroid #"+iAcq)
 underInclusion = mean(latProfile(x>x0Inc & x <xfInc))
 ousideInclusion = mean(latProfile(x>x0Out & x <xfOut))
 acEnhancement = underInclusion - ousideInclusion
-
 attDiff = acEnhancement/2/incDiameter/fc*1E6
+end

@@ -1,8 +1,8 @@
 clear,clc
 
-dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14_multiInc';
-refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\multiInc';
+dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_19_multiInc';
+refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\sim_multiInc';
 % dataDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation\24_10_14_v2';
 % refDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation\24_10_14_ref';
 % resultsDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation';
@@ -24,9 +24,7 @@ groundTruthBack = [0.5,0.5,0.5];
 groundTruthInc = [1,1,1];
 
 % Weight parameters
-muB = 10^3; muC = 10^0;
 ratioCutOff = 10;
-order = 5;
 reject = 0.1;
 extension = 3;
 
@@ -44,16 +42,14 @@ NptodB = log10(exp(1))*20;
 x_inf = -2; x_sup = 2;
 z_inf = 0.2; z_sup = 4;
 
-iAcq = 3;
+iAcq = 1;
 
 %% Setting up
 
-for iAcq = 1:length(targetFiles)
 % Regularization
 
-muBtv = 10^3.5; muCtv = 10^3.5;
-muBswtv = 10^2.5; muCswtv = 10^0;
-muBtvl1 = 10^3.5; muCtvl1 = 10^1;
+muBtv = 10^4; muCtv = 10^4;
+muBswtv = 10^3; muCswtv = 10^0;
 muBwfr = 10^3.5; muCwfr = 10^1;
 
 out = load(fullfile(dataDir,targetFiles(iAcq).name));
@@ -64,6 +60,7 @@ dx = x(2)-x(1);
 dz = z(2)-z(1);
 x = x*1e2; % [cm]
 z = z*1e2; % [cm]
+z = z-0.05;
 
 sam1 = out.rf(:,:,1);
 Bmode = db(hilbert(sam1));
@@ -184,42 +181,42 @@ tol = 1e-3;
 clear mask
 mask = ones(m,n,p);
 
-% Creating masks and ideal map
-rInc = 0.7; c1x = 0; c1z = 2.05;
-[X,Z] = meshgrid(x_ACS,z_ACS);
-[Xq,Zq] = meshgrid(x,z);
-inclusion = (Xq.^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
-back = (Xq.^2 + (Zq-c1z).^2) >= (rInc+0.1)^2;
-% attIdeal = ones(size(Xq))*groundTruthBack(iAcq);
-% attIdeal((Xq.^2 + (Zq-c1z).^2)<= rInc^2) = groundTruthInc(iAcq);
-% inclusionACS = (X.^2 + (Z-c1z).^2)<= rInc^2;
-% attIdealACS = ones(size(X))*groundTruthBack(iAcq);
-% attIdealACS(inclusionACS) = groundTruthInc(iAcq); %incl = inclusion
-
 % Ideal maps
-[Xq,Zq] = meshgrid(x/1e2,z/1e2);
-attIdeal = interp2(out.rx,out.rz,out.medium.alpha_coeff,Xq,Zq);
-% idealAcs = out.medium.alpha_coeff;
-% % figure, imagesc(x,z,idealACS), axis image
-% figure, imagesc(out.rx(1,:),out.rz(:,1),imgaussfilt(idealAcs,10)), axis image
+% [Xq,Zq] = meshgrid(x/1e2,z/1e2);
+xMedium = out.rx(1,:)*100;
+zMedium = out.rz(:,1)*100;
+attIdeal = out.medium.alpha_coeff;
+%% Creating masks
+% Creating masks and ideal map
+Xq = out.rx*100; Zq = out.rz*100;
+rInc = 0.3; c1x = -0.6; c1z = 1.1;
+inc1 = ((Xq-c1x).^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
+rInc = 0.5; c1x = 0.7; c1z = 2;
+inc2 = ((Xq-c1x).^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
+rInc = 0.4; c1x = 0; c1z = 3;
+inc3 = ((Xq-c1x).^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
+back = ones(size(Xq)) & ~(inc1|inc2|inc3);
+se = strel('disk',50,8);
+back = imerode(back,se);
+
+figure, 
+imagesc(xMedium,zMedium,attIdeal, attRange)
+hold on
+contour(xMedium,zMedium,back,1,'w--')
+contour(xMedium,zMedium,inc1,1,'w--')
+contour(xMedium,zMedium,inc2,1,'w--')
+contour(xMedium,zMedium,inc3,1,'w--')
+hold off
+axis image
+colormap turbo
 
 %% TV
+tic
 [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
+toc
 BRTV = reshape(Bn*NptodB,m,n);
 CRTV = reshape(Cn*NptodB,m,n);
 
-
-% AttInterp = interp2(X,Z,BRTV,Xq,Zq);
-% r.meanBack = mean(AttInterp(back),"omitnan");
-% r.stdBack = std(AttInterp(back),"omitnan");
-% r.meanInc = mean(AttInterp(inclusion),"omitnan");
-% r.stdInc = std(AttInterp(inclusion),"omitnan");
-% r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
-% r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
-% r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
-% r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
-% r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
-% MetricsTV(iAcq) = r;
 %% SWTV
 % Calculating SNR
 envelope = abs(hilbert(sam1));
@@ -244,22 +241,12 @@ desvSNR = abs(SNR-SNRopt)/SNRopt*100;
 wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Method
+tic
 [Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv,...
 m,n,tol,mask(:),wSNR);
-BRSWTV = reshape(Bn*NptodB,m,n);
-CRSWTV = reshape(Cn*NptodB,m,n);
-
-% AttInterp = interp2(X,Z,BRSWTV,Xq,Zq);
-% r.meanBack = mean(AttInterp(back),"omitnan");
-% r.stdBack = std(AttInterp(back),"omitnan");
-% r.meanInc = mean(AttInterp(inclusion),"omitnan");
-% r.stdInc = std(AttInterp(inclusion),"omitnan");
-% r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
-% r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
-% r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
-% r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
-% r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
-% MetricsSWTV(iAcq) = r;
+toc
+BSWTV = reshape(Bn*NptodB,m,n);
+CSWTV = reshape(Cn*NptodB,m,n);
 
 %% SWIFT
 % First iteration
@@ -279,20 +266,8 @@ A2w = W*A2;
 
 % Second iteration
 [Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
-BRWFR = reshape(Bn*NptodB,m,n);
+BSWIFT = reshape(Bn*NptodB,m,n);
 
-
-% AttInterp = interp2(X,Z,BRWFR,Xq,Zq);
-% r.meanBack = mean(AttInterp(back),"omitnan");
-% r.stdBack = std(AttInterp(back),"omitnan");
-% r.meanInc = mean(AttInterp(inclusion),"omitnan");
-% r.stdInc = std(AttInterp(inclusion),"omitnan");
-% r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
-% r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
-% r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
-% r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
-% r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
-% MetricsWFR(iAcq) = r;
 %% Plotting
 figure('Units','centimeters', 'Position',[5 5 22 4]);
 tiledlayout(1,5, "Padding","tight", 'TileSpacing','compact');
@@ -308,13 +283,14 @@ c.Label.String = 'dB';
 title('B-mode')
 ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-% hold on 
-% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-%     'LineWidth',1, 'Curvature',1)
+% hold on
+% contour(xMedium,zMedium,back,1,'w--')
+% contour(xMedium,zMedium,inc1,1,'w--')
+% contour(xMedium,zMedium,inc2,1,'w--')
+% contour(xMedium,zMedium,inc3,1,'w--')
 % hold off
-
 t2 = nexttile;
-imagesc(x,z,attIdeal,attRange)
+imagesc(xMedium,zMedium,attIdeal, attRange)
 xlabel('Lateral [cm]'), % ylabel('Axial [cm]')
 colormap(t2,turbo)
 axis equal
@@ -329,33 +305,17 @@ axis image
 title('RSLD')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-% hold on 
-% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-%     'LineWidth',1, 'Curvature',1, 'EdgeColor',[1 1 1])
-% hold off
 
 t1 = nexttile; 
-imagesc(x_ACS,z_ACS,BRSWTV, attRange)
+imagesc(x_ACS,z_ACS,BSWTV, attRange)
 colormap(t1,turbo)
 axis image
 title('SWTV-ACE')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-% hold on 
-% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-%     'LineWidth',1, 'Curvature',1, 'EdgeColor',[1 1 1])
-% hold off
-
-% t1 = nexttile; 
-% imagesc(x_ACS,z_ACS,BRTVL1, attRange)
-% colormap(t1,turbo)
-% axis image
-% title('TVL1')
-% % ylabel('Axial [cm]')
-% xlabel('Lateral [cm]')
 
 t4 = nexttile; 
-imagesc(x_ACS,z_ACS,BRWFR, attRange)
+imagesc(x_ACS,z_ACS,BSWIFT, attRange)
 colormap(t4,turbo)
 axis image
 title('SWIFT')
@@ -365,6 +325,27 @@ c.Label.String = 'ACS [db/cm/MHz]';
 xlabel('Lateral [cm]')
 
 fontsize(gcf,8,'points')
+
+%% Metrics
+[X,Z] = meshgrid(x_ACS,z_ACS);
+[Xq,Zq] = meshgrid(xMedium,zMedium);
+rsldInt = interp2(X,Z,BRTV,Xq,Zq);
+swtvInt = interp2(X,Z,BSWTV,Xq,Zq);
+swiftInt = interp2(X,Z,BSWIFT,Xq,Zq);
+
+T = struct2table([
+    getMetrics(rsldInt,back,1,'TV','back');
+    getMetrics(rsldInt,inc1,0.5,'TV','inc1');
+    getMetrics(rsldInt,inc2,0.5,'TV','inc2');
+    getMetrics(rsldInt,inc3,1,'TV','inc3');
+    getMetrics(swtvInt,back,1,'SWTV','back');
+    getMetrics(swtvInt,inc1,0.5,'SWTV','inc1');
+    getMetrics(swtvInt,inc2,0.5,'SWTV','inc2');
+    getMetrics(swtvInt,inc3,1,'SWTV','inc3');
+    getMetrics(swiftInt,back,1,'SWIFT','back');
+    getMetrics(swiftInt,inc1,0.5,'SWIFT','inc1');
+    getMetrics(swiftInt,inc2,0.5,'SWIFT','inc2');
+    getMetrics(swiftInt,inc3,1,'SWIFT','inc3') ]);
 
 %%
 cbPlacement = 'eastoutside';
@@ -381,6 +362,12 @@ c.Label.String = 'dB';
 title('Bmode')
 xlabel('Lateral [cm]')
 ylabel('Axial [cm]')
+% hold on
+% contour(xMedium,zMedium,back,1,'w--')
+% contour(xMedium,zMedium,inc1,1,'w--')
+% contour(xMedium,zMedium,inc2,1,'w--')
+% contour(xMedium,zMedium,inc3,1,'w--')
+% hold off
 
 t2 = nexttile; 
 imagesc(x_ACS,z_ACS,bscMap, bsRange)
@@ -406,41 +393,14 @@ fontsize(gcf,9,'points')
 save_all_figures_to_directory(resultsDir,['simInc',num2str(iAcq),'Fig'],'svg');
 close all
 
-end
-
+writetable(T,fullfile(resultsDir,'multiInc.xlsx'))
 
 %%
-% results1 = struct2table(MetricsTV);
-% results2 = struct2table(MetricsSWTV);
-% results4 = struct2table(MetricsWFR);
-% 
-% disp('Bias Back')
-% disp(results1.biasBack)
-% disp(results2.biasBack)
-% disp(results4.biasBack)
-% 
-% disp('Bias Inc')
-% disp(results1.biasInc)
-% disp(results2.biasInc)
-% disp(results4.biasInc)
-% 
-% disp('RMSE Back')
-% disp(results1.rmseBack)
-% disp(results2.rmseBack)
-% disp(results4.rmseBack)
-% 
-% disp('RMSE Inc')
-% disp(results1.rmseInc)
-% disp(results2.rmseInc)
-% disp(results4.rmseInc)
-% 
-% disp('CNR')
-% disp(results1.cnr)
-% disp(results2.cnr)
-% disp(results4.cnr)
-% 
-% 
-% 
-% T = [results1;results2;results4];
-% writetable(T,fullfile(resultsDir,tableName),...
-%      'WriteRowNames',true);
+function r = getMetrics(image,mask,gt,method,region)
+r.mean = mean(image(mask),'all','omitmissing');
+r.std = std(image(mask),[],'all','omitmissing');
+r.nrmse = sqrt(mean((image(mask) - gt).^2,'all','omitmissing'))/gt;
+r.nbias = mean(image(mask) - gt,'all','omitmissing')/gt;
+r.method = method;
+r.region = region;
+end

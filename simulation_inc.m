@@ -1,11 +1,11 @@
 clear,clc
 
-% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
-% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-09-18';
-dataDir = 'P:\smerino\simulation_acs\rf_data\24_10_14_inc';
-refDir = 'P:\smerino\simulation_acs\rf_data\24_10_14_ref';
-resultsDir = 'P:\smerino\UFFC2024results';
+dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
+refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\sim_inc';
+% dataDir = 'P:\smerino\simulation_acs\rf_data\24_10_14_inc';
+% refDir = 'P:\smerino\simulation_acs\rf_data\24_10_14_ref';
+% resultsDir = 'P:\smerino\UFFC2024results';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
@@ -26,7 +26,6 @@ groundTruthInc = [1,1,1];
 % Weight parameters
 muB = 10^3; muC = 10^0;
 ratioCutOff = 10;
-order = 5;
 reject = 0.1;
 extension = 3;
 
@@ -109,18 +108,6 @@ z_ACS = z(z0p+ nz/2);
 m  = length(z0p);
 
 %% Spectrum
-% BW from spectrogram
-% [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
-% meanSpectrum = mean(pxx,2);
-% [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, 0.1);
-% meanSpectrum = db(meanSpectrum./max(meanSpectrum));
-% figure,plot(fpxx/1e6,meanSpectrum)
-% xline([freq_L,freq_H]/1e6)
-% xlabel('Frequency [MHz]')
-% ylabel('Magnitude')
-% xlim([0 15])
-% grid on
-
 % Frequency samples
 NFFT = 2^(nextpow2(nz/2)+2);
 band = (0:NFFT-1)'/NFFT * fs;   % [Hz] Band of frequencies
@@ -276,23 +263,6 @@ r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan
 r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
 MetricsSWTV(iAcq) = r;
 
-%% TVL1
-[Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBtvl1,muCtvl1,m,n,tol,mask(:));
-BRTVL1 = reshape(Bn*NptodB,m,n);
-CRTVL1 = reshape(Cn*NptodB,m,n);
-
-AttInterp = interp2(X,Z,BRTVL1,Xq,Zq);
-r.meanBack = mean(AttInterp(back),"omitnan");
-r.stdBack = std(AttInterp(back),"omitnan");
-r.meanInc = mean(AttInterp(inclusion),"omitnan");
-r.stdInc = std(AttInterp(inclusion),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
-r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
-r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
-r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
-r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
-MetricsTVL1(iAcq) = r;
-
 %% SWIFT
 % First iteration
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBwfr,muCwfr,m,n,tol,mask(:));
@@ -361,10 +331,10 @@ axis image
 title('RSLD')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-hold on 
-rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-    'LineWidth',1, 'Curvature',1, 'EdgeColor',[1 1 1])
-hold off
+% hold on 
+% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+%     'LineWidth',1, 'Curvature',1, 'EdgeColor',[1 1 1])
+% hold off
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRSWTV, attRange)
@@ -373,18 +343,10 @@ axis image
 title('SWTV-ACE')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-hold on 
-rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-    'LineWidth',1, 'Curvature',1, 'EdgeColor',[1 1 1])
-hold off
-
-% t1 = nexttile; 
-% imagesc(x_ACS,z_ACS,BRTVL1, attRange)
-% colormap(t1,turbo)
-% axis image
-% title('TVL1')
-% % ylabel('Axial [cm]')
-% xlabel('Lateral [cm]')
+% hold on 
+% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+%     'LineWidth',1, 'Curvature',1, 'EdgeColor',[1 1 1])
+% hold off
 
 t4 = nexttile; 
 imagesc(x_ACS,z_ACS,BRWFR, attRange)
@@ -395,10 +357,10 @@ c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-hold on 
-rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-    'LineWidth',1, 'Curvature',1, 'EdgeColor',[1 1 1])
-hold off
+% hold on 
+% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+%     'LineWidth',1, 'Curvature',1, 'EdgeColor',[1 1 1])
+% hold off
 
 fontsize(gcf,8,'points')
 
@@ -419,7 +381,7 @@ xlabel('Lateral [cm]')
 ylabel('Axial [cm]')
 
 t2 = nexttile; 
-imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
+imagesc(x_ACS,z_ACS,bscMap, bsRange)
 colormap(t2,parula)
 axis image
 title('\DeltaBSC')
@@ -442,47 +404,41 @@ fontsize(gcf,9,'points')
 %%
 axialTV = mean(BRTV(:,41:49),2);
 axialSWTV = mean(BRSWTV(:,41:49),2);
-axialTVL1 = mean(BRTVL1(:,41:49),2);
 axialWFR = mean(BRWFR(:,41:49),2);
 
 lateralTV = mean(BRTV(24:26,:),1);
 lateralSWTV = mean(BRSWTV(24:26,:),1);
-lateralTVL1 = mean(BRTVL1(24:26,:),1);
 lateralWFR = mean(BRWFR(24:26,:),1);
 
 %% Lateral and axial profiles
 lineColors = [0.635 0.078 0.184; 0.466 0.674 0.188; 0.301 0.745 0.933];
+lw = 2;
 
 figure('Units','centimeters', 'Position',[5 5 14 4])
 tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
-% figure('Units','centimeters', 'Position',[5 5 12 12])
 nexttile,
-plot(z_ACS, axialTV, ':', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
+plot(z_ACS, axialTV, ':', 'LineWidth',lw, 'Color',lineColors(1,:) ),
 hold on
-plot(z_ACS, axialSWTV, '-.', 'LineWidth',1.5, 'Color',lineColors(2,:) ),
-% plot(z_ACS, axialTVL1, 'b:', 'LineWidth',1.5, 'Color',lineColors(2,:) ),
-plot(z_ACS, axialWFR, '-', 'LineWidth',1.5, 'Color',lineColors(3,:) ),
+plot(z_ACS, axialSWTV, '-.', 'LineWidth',lw, 'Color',lineColors(2,:) ),
+plot(z_ACS, axialWFR, '-', 'LineWidth',lw, 'Color',lineColors(3,:) ),
 plot(z_ACS,mean(attIdealACS(:,41:49),2), '--', 'Color', [0.2 0.2 0.2])
 hold off
 grid on
 ylim([0 1.5])
 xlim([z_ACS(1) z_ACS(end)])
-%title('Axial profile')
 ylabel('ACS [dB/cm/MHz]')
 xlabel('Axial [cm]')
 
 nexttile,
-plot(x_ACS, lateralTV, ':', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
+plot(x_ACS, lateralTV, ':', 'LineWidth',lw, 'Color',lineColors(1,:) ),
 hold on
-plot(x_ACS, lateralSWTV, '-.', 'LineWidth',1.5, 'Color',lineColors(2,:) ),
-% plot(z_ACS, lateralTVL1, 'b:', 'LineWidth',1.5, 'Color',lineColors(2,:) ),
-plot(x_ACS, lateralWFR, '-', 'LineWidth',1.5, 'Color',lineColors(3,:) ),
+plot(x_ACS, lateralSWTV, '-.', 'LineWidth',lw, 'Color',lineColors(2,:) ),
+plot(x_ACS, lateralWFR, '-', 'LineWidth',lw, 'Color',lineColors(3,:) ),
 plot(x_ACS,mean(attIdealACS(24:26,:),1), 'k--')
 hold off
 grid on
 ylim([0 1.5])
 xlim([x_ACS(1) x_ACS(end)])
-%title('Lateral profile')
 xlabel('Lateral [cm]')
 
 %%
@@ -495,41 +451,10 @@ end
 %%
 results1 = struct2table(MetricsTV);
 results2 = struct2table(MetricsSWTV);
-results3 = struct2table(MetricsTVL1);
 results4 = struct2table(MetricsWFR);
 
-disp('Bias Back')
-disp(results1.biasBack)
-disp(results2.biasBack)
-disp(results3.biasBack)
-disp(results4.biasBack)
-
-disp('Bias Inc')
-disp(results1.biasInc)
-disp(results2.biasInc)
-disp(results3.biasInc)
-disp(results4.biasInc)
-
-disp('RMSE Back')
-disp(results1.rmseBack)
-disp(results2.rmseBack)
-disp(results3.rmseBack)
-disp(results4.rmseBack)
-
-disp('RMSE Inc')
-disp(results1.rmseInc)
-disp(results2.rmseInc)
-disp(results3.rmseInc)
-disp(results4.rmseInc)
-
-disp('CNR')
-disp(results1.cnr)
-disp(results2.cnr)
-disp(results3.cnr)
-disp(results4.cnr)
 
 
-
-T = [results1;results2;results3;results4];
+T = [results1;results2;results4];
 writetable(T,fullfile(resultsDir,tableName),...
      'WriteRowNames',true);

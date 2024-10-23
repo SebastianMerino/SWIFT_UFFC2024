@@ -1,11 +1,11 @@
 clear,clc
 
-% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_layered';
-% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-09-18';
-dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_layered';
-refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-resultsDir = 'P:\smerino\UFFC2024results';
+dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_layered';
+refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\sim_layered';
+% dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_layered';
+% refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+% resultsDir = 'P:\smerino\UFFC2024results';
 
 [~,~] = mkdir(resultsDir);
 
@@ -48,7 +48,7 @@ z_inf = 0.4; z_sup = 3.7;
 iAcq = 1;
 %% For looping
 
-for iAcq = 4:4
+for iAcq = 1:4
 load(fullfile(dataDir,targetFiles(iAcq).name));
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
@@ -329,9 +329,9 @@ c.Label.String = '[db]';
 title('B-mode')
 ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-hold on 
-xline(2.05, 'w--', 'LineWidth',1.5)
-hold off
+% hold on 
+% xline(2.05, 'w--', 'LineWidth',1.5)
+% hold off
 
 t2 = nexttile;
 imagesc(x_ACS,z_ACS,attIdeal,attRange)
@@ -347,9 +347,9 @@ axis image
 title('RSLD')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-hold on 
-yline(2, 'w--', 'LineWidth',1.5)
-hold off
+% hold on 
+% yline(2, 'w--', 'LineWidth',1.5)
+% hold off
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRSWTV, attRange)
@@ -358,17 +358,9 @@ axis image
 title('SWTV-ACE')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-hold on 
-yline(2, 'w--', 'LineWidth',1.5)
-hold off
-
-% t1 = nexttile; 
-% imagesc(x_ACS,z_ACS,BRTVL1, attRange)
-% colormap(t1,turbo)
-% axis image
-% title('TVL1')
-% % ylabel('Axial [cm]')
-% xlabel('Lateral [cm]')
+% hold on 
+% yline(2, 'w--', 'LineWidth',1.5)
+% hold off
 
 t4 = nexttile; 
 imagesc(x_ACS,z_ACS,BRWFR, attRange)
@@ -379,9 +371,9 @@ c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-hold on 
-yline(2, 'w--', 'LineWidth',1.5)
-hold off
+% hold on 
+% yline(2, 'w--', 'LineWidth',1.5)
+% hold off
 
 fontsize(gcf,8,'points')
 %%
@@ -411,15 +403,16 @@ ylabel('Axial [cm]')
 fontsize(gcf,8,'points')
 %% Lateral and axial profiles
 lineColors = [0.635 0.078 0.184; 0.466 0.674 0.188; 0.301 0.745 0.933];
+lw = 2;
 
-figure('Units','centimeters', 'Position',[5 5 8 4])
+figure('Units','centimeters', 'Position',[5 5 14 4])
 tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
-nexttile([1,2]),
-plot(z_ACS, axialTV, ':', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
+nexttile,
+plot(z_ACS, axialTV, ':', 'LineWidth',lw, 'Color',lineColors(1,:) ),
 hold on
-plot(z_ACS, axialSWTV, '-.', 'LineWidth',1.5, 'Color',lineColors(2,:) ),
+plot(z_ACS, axialSWTV, '-.', 'LineWidth',lw, 'Color',lineColors(2,:) ),
 % plot(z_ACS, axialTVL1, 'b:', 'LineWidth',1.5, 'Color',lineColors(2,:) ),
-plot(z_ACS, axialWFR, '-', 'LineWidth',1.5, 'Color',lineColors(3,:) ),
+plot(z_ACS, axialWFR, '-', 'LineWidth',lw, 'Color',lineColors(3,:) ),
 plot(z_ACS,mean(attIdeal,2), '--', 'Color', [0.2 0.2 0.2])
 hold off
 grid on
@@ -428,8 +421,9 @@ xlim([z_ACS(1) z_ACS(end)])
 %title('Axial profile')
 xlabel('Axial [cm]')
 ylabel('ACS [dB/cm/MHz]')
-legend({'RSLD','SWTV-ACE','SWIFT'}, 'Location','northwest') 
-
+if iAcq==1
+    legend({'RSLD','SWTV-ACE','SWIFT'}, 'Location','northwest') ;
+end
 %%
 save_all_figures_to_directory(resultsDir,['simLayered',num2str(iAcq),'Fig'],'svg');
 close all
@@ -440,32 +434,6 @@ end
 results1 = struct2table(MetricsTV);
 results2 = struct2table(MetricsSWTV);
 results4 = struct2table(MetricsWFR);
-
-disp('Bias Top')
-disp(results1.biasTop)
-disp(results2.biasTop)
-disp(results4.biasTop)
-
-disp('Bias Bottom')
-disp(results1.biasBottom)
-disp(results2.biasBottom)
-disp(results4.biasBottom)
-
-disp('RMSE Top')
-disp(results1.rmseTop)
-disp(results2.rmseTop)
-disp(results4.rmseTop)
-
-disp('RMSE Bottom')
-disp(results1.rmseBottom)
-disp(results2.rmseBottom)
-disp(results4.rmseBottom)
-
-disp('CNR')
-disp(results1.cnr)
-disp(results2.cnr)
-disp(results4.cnr)
-
 
 T = [results1;results2;results4];
 writetable(T,fullfile(resultsDir,tableName),...

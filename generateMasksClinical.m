@@ -14,7 +14,7 @@ if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 dynRange = [-50 0];
 
 %% Loading case FULL VERSION
-for iAcq = 1:height(T)
+for iAcq = 1% 1:height(T)
 
 patient = num2str(T.patient(iAcq));
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);

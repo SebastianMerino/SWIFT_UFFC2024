@@ -58,6 +58,7 @@ dx = x(2)-x(1);
 dz = z(2)-z(1);
 x = x*1e2; % [cm]
 z = z*1e2; % [cm]
+z = z-0.05;
 
 sam1 = rf(:,:,1);
 dynRange = [-50,0];
@@ -65,8 +66,6 @@ Bmode = db(hilbert(sam1));
 Bmode = Bmode - max(Bmode(:));
 acsMedium = medium.alpha_coeff;
 
-% Correction
-% z = z-3.5*medium.sound_speed_ref/6.66e6*100/2;
 %% Cropping and finding sample sizes
 
 % Limits for ACS estimation

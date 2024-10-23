@@ -86,7 +86,7 @@ x0Out2 = 2.97; xfOut2 = 3.41;
 % x0Inc = 1.25; xfInc = 1.85;
 
 
-[bFilt,aFilt] = butter(3,[fc-freqTol fc+freqTol]/fs*2, "bandpass");
+[bFilt,aFilt] = butter(2,[fc-freqTol fc+freqTol]/fs*2, "bandpass");
 samFilt = filtfilt(bFilt,aFilt,sam1);
 [pxx,fpxx] = pwelch(samFilt,300,250,512,fs);
 

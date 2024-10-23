@@ -24,22 +24,16 @@ F(1) = 1/2*(norm( b - A1*B - A2*C ))^2 + mu1*TVcalc_isotropic(B,m,n,minimask) + 
 
 ite  = 0;
 error = 1;
-
-while abs(error) > tol && ite < 20
+Bprev = B; Cprev = C;
+while abs(error) > tol && ite < 50
     ite = ite + 1;
     
     rho = 1;
     % First part of ADMM algorithm: B
-    % B = IRLS_ANIS_TV(b-A2*C-D-v,A1,mu1/rho,m,n,tol,mask,minimask);
     B = IRLS_TV(b-A2*C-D-v,A1,mu1/rho,m,n,tol,mask,minimask);
-    %F(2*ite,1) = 1/2*(norm( b - A1*B - A2*C ))^2 + mu1*TVcalc2(B,m,n,minimask) + mu2*TVcalc2(C,m,n,minimask);
-    %error = F(2*ite,1) - F(2*ite-1,1);
     
     % Second part of ADMM algorithm: C
-    % C = IRLS_ANIS_TV(b-A1*B-D-v,A2,mu2/rho,m,n,tol,mask,minimask);
     C = IRLS_TV(b-A1*B-D-v,A2,mu2/rho,m,n,tol,mask,minimask);
-    %F(2*ite+1,1) = 1/2*(norm( b - A1*B - A2*C ))^2 + mu1*TVcalc2(B,m,n,minimask) + mu2*TVcalc2(C,m,n,minimask);
-    %error = F(2*ite+1,1) - F(2*ite,1);
     
     % Third part of ADMM algorithm: D
     % Least squares: 1/2*||D||_2^2 + rho/2*||D-w||_2^2
@@ -49,8 +43,11 @@ while abs(error) > tol && ite < 20
     % Fourth part of ADMM algorithm: v
     v = v + A1*B + A2*C + D - b;
     F(ite+1,1) = 1/2*(norm( b - A1*B - A2*C ))^2 + mu1*TVcalc_isotropic(B,m,n,minimask) + mu2*TVcalc_isotropic(C,m,n,minimask);
-    
+    error = sqrt(norm(B - Bprev).^2 + norm(C - Cprev).^2);
+    Cprev = C; Bprev = B;
 end
+disp('Number of iterations: ')
+disp(ite)
 
 end
 

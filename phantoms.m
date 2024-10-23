@@ -6,7 +6,7 @@ dataDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
     '\ID316V2\06-08-2023-Generic'];
 refDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
     '\ID544V2\06-08-2023-Generic'];
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\24-09-18';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\phantoms';
 
 % targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
@@ -33,7 +33,6 @@ NptodB = log10(exp(1))*20;
 
 % Weight parameters
 ratioCutOff = 10;
-order = 5;
 reject = 0.1;
 extension = 3;
 
@@ -45,7 +44,7 @@ groundTruthTargets = [0.97,0.95,0.95,0.55];
 
 % Plotting constants
 dynRange = [-50,0];
-attRange = [0.3,1.2];
+attRange = [0.2,1.2];
 
 tol = 1e-3;
 
@@ -125,16 +124,6 @@ z0d = z0p + nz/2;
 z_ACS = z(z0p+ nz/2);
 m  = length(z0p);
 
-% [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
-% meanSpectrum = mean(pxx,2);
-% figure,plot(fpxx/1e6,meanSpectrum)
-% [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, 0.1);
-% xline([freq_L,freq_H]/1e6)
-% xlim([0 15])
-% xlabel('Frequency [MHz]')
-% ylabel('Magnitude')
-% grid on
-
 % Frequency samples
 NFFT = 2^(nextpow2(nz/2)+2);
 band = (0:NFFT-1)'/NFFT * fs;   % [Hz] Band of frequencies
@@ -166,8 +155,7 @@ if true %iAcq == 1
     end
     
     % Windows for spectrum
-    % windowing = tukeywin(nz/2,0.25);
-    windowing = hamming(nz/2);
+    windowing = tukeywin(nz/2,0.25);
     windowing = windowing*ones(1,nx);
     
     % For looping
@@ -309,29 +297,6 @@ r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 r.method = 'SWTV';
 MetricsSWTV(iAcq) = r;
 
-%% TVL1
-tic
-[Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBtvl1,muCtvl1,m,n,tol,mask(:));
-toc
-BRTik = (reshape(Bn*NptodB,m,n));
-CRTik = (reshape(Cn,m,n));
-
-
-AttInterp = interp2(X,Z,BRTik,Xq,Zq);
-r.meanInc = mean(AttInterp(inc),"omitnan");
-r.stdInc = std(AttInterp(inc),"omitnan");
-r.meanBack = mean(AttInterp(back),"omitnan");
-r.stdBack = std(AttInterp(back),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
-r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
-r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
-    "omitnan") );
-r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
-    "omitnan") );
-r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
-r.method = 'TVL1';
-MetricsTVL1(iAcq) = r;
-
 %% SWIFT
 % First iteration
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBswift,muCswift,m,n,tol,mask(:));
@@ -384,10 +349,10 @@ title('B-mode')
 %subtitle(' ')
 c = colorbar;
 c.Label.String = 'dB';
-hold on 
-rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-    'LineWidth',1, 'Curvature',1)
-hold off
+% hold on 
+% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+%     'LineWidth',1, 'Curvature',1)
+% hold off
 
 % fontsize(gcf,8,'points')
 
@@ -403,7 +368,7 @@ c.Label.String = 'ACS [dB/cm/MHz]';
 % fontsize(gcf,8,'points')
 hold on 
 rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-    'LineWidth',1, 'Curvature',1)
+    'LineWidth',1, 'Curvature',1, 'EdgeColor','w')
 hold off
 
 t3 = nexttile;
@@ -418,20 +383,8 @@ c.Label.String = 'ACS [dB/cm/MHz]';
 % fontsize(gcf,8,'points')
 hold on 
 rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-    'LineWidth',1, 'Curvature',1)
+    'LineWidth',1, 'Curvature',1, 'EdgeColor','w')
 hold off
-
-% t4 = nexttile;
-% imagesc(x_ACS,z_ACS,BRTik, attRange)
-% xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-% colormap(t4,turbo)
-% axis image
-% title('TVL1')
-% % fontsize(gcf,8,'points')
-% hold on 
-% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-%     'LineWidth',1, 'Curvature',1)
-% hold off
 
 t5 = nexttile;
 imagesc(x_ACS,z_ACS,BSWIFT, attRange)
@@ -446,7 +399,7 @@ c.Label.String = 'ACS [dB/cm/MHz]';
 % fontsize(gcf,8,'points')
 hold on 
 rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-    'LineWidth',1, 'Curvature',1)
+    'LineWidth',1, 'Curvature',1, 'EdgeColor','w')
 hold off
 end
 
@@ -456,40 +409,10 @@ close all
 %%
 results1 = struct2table(MetricsTV);
 results2 = struct2table(MetricsSWTV);
-results3 = struct2table(MetricsTVL1);
 results4 = struct2table(MetricsSWIFT);
 
-disp('Bias Inc')
-disp(results1.biasInc)
-disp(results2.biasInc)
-disp(results3.biasInc)
-disp(results4.biasInc)
 
-disp('Bias Back')
-disp(results1.biasBack)
-disp(results2.biasBack)
-disp(results3.biasBack)
-disp(results4.biasBack)
-
-disp('RMSE Inc')
-disp(results1.rmseInc)
-disp(results2.rmseInc)
-disp(results3.rmseInc)
-disp(results4.rmseInc)
-
-disp('RMSE Back')
-disp(results1.rmseBack)
-disp(results2.rmseBack)
-disp(results3.rmseBack)
-disp(results4.rmseBack)
-
-disp('CNR')
-disp(results1.cnr)
-disp(results2.cnr)
-disp(results3.cnr)
-disp(results4.cnr)
-
-T = [results1;results2;results3;results4];
+T = [results1;results2;results4];
 writetable(T,fullfile(resultsDir,tableName),...
      'WriteRowNames',true);
 %%
