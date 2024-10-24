@@ -78,7 +78,7 @@ for iSim = 1:length(simuNames)
     % Other inclusion
     cz = 2e-2; cx = 0.7e-2;
     r = 0.5e-2; 
-    if iAcq ==1
+    if iSim ==1
         inc_std = background_std/4;
     else
         inc_std = background_std*4;
