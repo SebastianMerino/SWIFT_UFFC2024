@@ -2,7 +2,7 @@ clear,clc
 
 dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_layered';
 refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\sim_layered';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_layered';
 % dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_layered';
 % refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
 % resultsDir = 'P:\smerino\UFFC2024results';

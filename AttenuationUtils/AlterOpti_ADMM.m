@@ -1,6 +1,6 @@
 
 
-function [B,C] = AlterOpti_ADMM(A1,A2,b,mu1,mu2,m,n,tol,mask)
+function [B,C,ite] = AlterOpti_ADMM(A1,A2,b,mu1,mu2,m,n,tol,mask)
 
 p = length(mask)/(m*n);
 minimask = reshape(mask,[m n p]);
@@ -46,8 +46,6 @@ while abs(error) > tol && ite < 50
     error = sqrt(norm(B - Bprev).^2 + norm(C - Cprev).^2);
     Cprev = C; Bprev = B;
 end
-disp('Number of iterations: ')
-disp(ite)
 
 end
 

@@ -6,7 +6,7 @@ dataDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
     '\ID316V2\06-08-2023-Generic'];
 refDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
     '\ID544V2\06-08-2023-Generic'];
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\phantoms';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\phantoms';
 
 % targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
@@ -155,7 +155,7 @@ if true %iAcq == 1
     end
     
     % Windows for spectrum
-    windowing = tukeywin(nz/2,0.25);
+    windowing = hamming(nz/2);
     windowing = windowing*ones(1,nx);
     
     % For looping
@@ -233,8 +233,8 @@ mask = ones(m,n,p);
 %% RSLD-TV
 
 tic
-[Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
-toc
+[Bn,Cn,ite] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
+exTime = toc;
 BR = (reshape(Bn*NptodB,m,n));
 CR = (reshape(Cn,m,n));
 
@@ -251,6 +251,9 @@ r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
     "omitnan") );
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 r.method = 'TV';
+r.sample = iAcq;
+r.ite = ite;
+r.exTime = exTime;
 MetricsTV(iAcq) = r;
 
 %% British Columbia Approach
@@ -278,7 +281,7 @@ w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 % computation
 tic
 [Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv,m,n,tol,mask(:),w);
-toc
+exTime = toc;
 BRBC = (reshape(Bn*NptodB,m,n));
 CRBC = (reshape(Cn,m,n));
 
@@ -295,6 +298,9 @@ r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
     "omitnan") );
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 r.method = 'SWTV';
+r.sample = iAcq;
+r.ite = ite;
+r.exTime = exTime;
 MetricsSWTV(iAcq) = r;
 
 %% SWIFT
@@ -303,7 +309,6 @@ MetricsSWTV(iAcq) = r;
 bscMap = reshape(Cn*NptodB,m,n);
 
 % Weight map
-% w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
 w = (1-reject)*(abs(bscMap)<ratioCutOff)+reject;
 wExt = movmin(w,extension);
 
@@ -315,7 +320,9 @@ A1w = W*A1;
 A2w = W*A2;
 
 % Second iteration
+tic
 [Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBswift,muCswift,m,n,tol,mask(:),w);
+exTime = toc;
 BSWIFT = reshape(Bn*NptodB,m,n);
 
 AttInterp = interp2(X,Z,BSWIFT,Xq,Zq);
@@ -331,6 +338,9 @@ r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
     "omitnan") );
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 r.method = 'SWIFT';
+r.sample = iAcq;
+r.ite = ite;
+r.exTime = exTime;
 MetricsSWIFT(iAcq) = r;
 
 %%

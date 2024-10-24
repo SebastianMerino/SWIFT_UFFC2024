@@ -2,7 +2,7 @@ clear,clc
 
 dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_19_multiInc';
 refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\sim_multiInc';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_multiInc';
 % dataDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation\24_10_14_v2';
 % refDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation\24_10_14_ref';
 % resultsDir = 'C:\Users\smerino.C084288\Documents\Datasets\Attenuation\simulation';
@@ -39,8 +39,8 @@ bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
 % Region for attenuation imaging
-x_inf = -2; x_sup = 2;
-z_inf = 0.2; z_sup = 4;
+x_inf = -1.5; x_sup = 5;
+z_inf = 0.4; z_sup = 3.7;
 
 iAcq = 1;
 
@@ -269,10 +269,10 @@ A2w = W*A2;
 BSWIFT = reshape(Bn*NptodB,m,n);
 
 %% Plotting
-figure('Units','centimeters', 'Position',[5 5 22 4]);
-tiledlayout(1,5, "Padding","tight", 'TileSpacing','compact');
+figure('Units','centimeters', 'Position',[5 5 13 8]);
+tiledlayout(2,3, "Padding","tight", 'TileSpacing','compact');
 
-t1 = nexttile;
+t1 = nexttile([1,2]);
 imagesc(x,z,Bmode,dynRange)
 axis equal
 xlim([x_ACS(1) x_ACS(end)]),
@@ -297,13 +297,15 @@ axis equal
 xlim([x_ACS(1) x_ACS(end)]),
 ylim([z_ACS(1) z_ACS(end)]),
 title('Ideal')
+c = colorbar;
+c.Label.String = 'ACS [db/cm/MHz]';
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRTV, attRange)
 colormap(t1,turbo)
 axis image
 title('RSLD')
-% ylabel('Axial [cm]')
+ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 
 t1 = nexttile; 
