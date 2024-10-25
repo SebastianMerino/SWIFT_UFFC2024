@@ -221,7 +221,9 @@ attIdeal(Z>2) = groundTruthBottom(iAcq);
 top = Zq < 1.9; % 0.1 cm interface
 bottom = Zq > 2.1;
 %% TV
-[Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
+tic
+[Bn,Cn,ite] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
+exTime = toc;
 BRTV = reshape(Bn*NptodB,m,n);
 CRTV = reshape(Cn*NptodB,m,n);
 
@@ -237,6 +239,10 @@ r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
 r.rmseTop = sqrt(mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,"omitnan"));
 r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omitnan"));
 r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
+r.method = 'TV';
+r.sample = iAcq;
+r.ite = ite;
+r.exTime = exTime;
 MetricsTV(iAcq) = r;
 %% SWTV
 % Calculating SNR
@@ -262,8 +268,10 @@ desvSNR = abs(SNR-SNRopt)/SNRopt*100;
 wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Method
-[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv,...
-m,n,tol,mask(:),wSNR);
+tic
+[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv, ...
+    m,n,tol,mask(:),w);
+exTime = toc;
 BRSWTV = reshape(Bn*NptodB,m,n);
 CRSWTV = reshape(Cn*NptodB,m,n);
 
@@ -278,6 +286,10 @@ r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
 r.rmseTop = sqrt(mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,"omitnan"));
 r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omitnan"));
 r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
+r.method = 'SWTV';
+r.sample = iAcq;
+r.ite = ite;
+r.exTime = exTime;
 MetricsSWTV(iAcq) = r;
 
 %% SWIFT
@@ -297,11 +309,13 @@ A1w = W*A1;
 A2w = W*A2;
 
 % Second iteration
-[Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
-BRWFR = reshape(Bn*NptodB,m,n);
+tic
+[Bn,~,ite] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBswift,muCswift,m,n,tol,mask(:),w);
+exTime = toc;
+BSWIFT = reshape(Bn*NptodB,m,n);
 
-axialWFR = mean(BRWFR,2);
-AttInterp = interp2(X,Z,BRWFR,Xq,Zq);
+axialWFR = mean(BSWIFT,2);
+AttInterp = interp2(X,Z,BSWIFT,Xq,Zq);
 r.meanTop = mean(AttInterp(top),"omitnan");
 r.stdTop = std(AttInterp(top),"omitnan");
 r.meanBottom = mean(AttInterp(bottom),"omitnan");
@@ -311,6 +325,10 @@ r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
 r.rmseTop = sqrt(mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,"omitnan"));
 r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omitnan"));
 r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
+r.method = 'SWIFT';
+r.sample = iAcq;
+r.ite = ite;
+r.exTime = exTime;
 MetricsWFR(iAcq) = r;
 
 
@@ -363,7 +381,7 @@ xlabel('Lateral [cm]')
 % hold off
 
 t4 = nexttile; 
-imagesc(x_ACS,z_ACS,BRWFR, attRange)
+imagesc(x_ACS,z_ACS,BSWIFT, attRange)
 colormap(t4,turbo)
 axis image
 title('SWIFT')

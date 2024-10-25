@@ -212,11 +212,13 @@ colormap turbo
 
 %% TV
 tic
-[Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
-toc
+[Bn,Cn,ite] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
+exTime = toc;
 BRTV = reshape(Bn*NptodB,m,n);
 CRTV = reshape(Cn*NptodB,m,n);
 
+fprintf('\nExecution time: %.4f\n',exTime)
+fprintf('Number of iterations: %d\n',ite)
 %% SWTV
 % Calculating SNR
 envelope = abs(hilbert(sam1));
@@ -242,11 +244,13 @@ wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Method
 tic
-[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv,...
-m,n,tol,mask(:),wSNR);
-toc
+[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv, ...
+    m,n,tol,mask(:),w);
+exTime = toc;
 BSWTV = reshape(Bn*NptodB,m,n);
 CSWTV = reshape(Cn*NptodB,m,n);
+fprintf('\nExecution time: %.4f\n',exTime)
+fprintf('Number of iterations: %d\n',ite)
 
 %% SWIFT
 % First iteration
@@ -265,8 +269,12 @@ A1w = W*A1;
 A2w = W*A2;
 
 % Second iteration
-[Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
+tic
+[Bn,~,ite] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBswift,muCswift,m,n,tol,mask(:),w);
+exTime = toc;
 BSWIFT = reshape(Bn*NptodB,m,n);
+fprintf('\nExecution time: %.4f\n',exTime)
+fprintf('Number of iterations: %d\n',ite)
 
 %% Plotting
 figure('Units','centimeters', 'Position',[5 5 13 8]);

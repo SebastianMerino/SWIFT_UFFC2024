@@ -206,7 +206,9 @@ attIdealACS = ones(size(X))*groundTruthBack(iAcq);
 attIdealACS(inclusionACS) = groundTruthInc(iAcq); %incl = inclusion
 
 %% TV
-[Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
+tic
+[Bn,Cn,ite] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
+exTime = toc;
 BRTV = reshape(Bn*NptodB,m,n);
 CRTV = reshape(Cn*NptodB,m,n);
 
@@ -221,6 +223,10 @@ r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
 r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
 r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
 r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
+r.method = 'TV';
+r.sample = iAcq;
+r.ite = ite;
+r.exTime = exTime;
 MetricsTV(iAcq) = r;
 %% SWTV
 % Calculating SNR
@@ -246,8 +252,10 @@ desvSNR = abs(SNR-SNRopt)/SNRopt*100;
 wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Method
-[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv,...
-m,n,tol,mask(:),wSNR);
+tic
+[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv, ...
+    m,n,tol,mask(:),w);
+exTime = toc;
 BRSWTV = reshape(Bn*NptodB,m,n);
 CRSWTV = reshape(Cn*NptodB,m,n);
 
@@ -261,6 +269,10 @@ r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
 r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
 r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
 r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
+r.method = 'SWTV';
+r.sample = iAcq;
+r.ite = ite;
+r.exTime = exTime;
 MetricsSWTV(iAcq) = r;
 
 %% SWIFT
@@ -280,11 +292,13 @@ A1w = W*A1;
 A2w = W*A2;
 
 % Second iteration
-[Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
-BRWFR = reshape(Bn*NptodB,m,n);
+tic
+[Bn,~,ite] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBswift,muCswift,m,n,tol,mask(:),w);
+exTime = toc;
+BSWIFT = reshape(Bn*NptodB,m,n);
 
 
-AttInterp = interp2(X,Z,BRWFR,Xq,Zq);
+AttInterp = interp2(X,Z,BSWIFT,Xq,Zq);
 r.meanBack = mean(AttInterp(back),"omitnan");
 r.stdBack = std(AttInterp(back),"omitnan");
 r.meanInc = mean(AttInterp(inclusion),"omitnan");
@@ -294,6 +308,10 @@ r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
 r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
 r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
 r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
+r.method = 'SWIFT';
+r.sample = iAcq;
+r.ite = ite;
+r.exTime = exTime;
 MetricsWFR(iAcq) = r;
 %% Plotting
 figure('Units','centimeters', 'Position',[5 5 22 4]);
@@ -349,7 +367,7 @@ xlabel('Lateral [cm]')
 % hold off
 
 t4 = nexttile; 
-imagesc(x_ACS,z_ACS,BRWFR, attRange)
+imagesc(x_ACS,z_ACS,BSWIFT, attRange)
 colormap(t4,turbo)
 axis image
 title('SWIFT')
@@ -404,11 +422,11 @@ fontsize(gcf,9,'points')
 %%
 axialTV = mean(BRTV(:,41:49),2);
 axialSWTV = mean(BRSWTV(:,41:49),2);
-axialWFR = mean(BRWFR(:,41:49),2);
+axialWFR = mean(BSWIFT(:,41:49),2);
 
 lateralTV = mean(BRTV(24:26,:),1);
 lateralSWTV = mean(BRSWTV(24:26,:),1);
-lateralWFR = mean(BRWFR(24:26,:),1);
+lateralWFR = mean(BSWIFT(24:26,:),1);
 
 %% Lateral and axial profiles
 lineColors = [0.635 0.078 0.184; 0.466 0.674 0.188; 0.301 0.745 0.933];

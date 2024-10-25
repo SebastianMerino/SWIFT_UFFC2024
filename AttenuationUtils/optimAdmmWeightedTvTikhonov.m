@@ -1,4 +1,4 @@
-function [B,C] = optimAdmmWeightedTvTikhonov(A1,A2,b,mu1,mu2,m,n,tol,mask,W)
+function [B,C,ite] = optimAdmmWeightedTvTikhonov(A1,A2,b,mu1,mu2,m,n,tol,mask,W)
 % Solver for SLD with Weighted Isotropic Total Variation regularization for ACS 
 % and weighted Tikhonov regularization for BSC
 
