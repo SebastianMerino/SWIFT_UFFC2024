@@ -1,11 +1,11 @@
-clear,clc
+setup,
 
-dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_layered';
-refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_layered';
-% dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_layered';
-% refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-% resultsDir = 'P:\smerino\UFFC2024results';
+% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_layered';
+% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_layered';
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_layered';
+refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+resultsDir = 'P:\smerino\UFFC2024results\simulation';
 
 [~,~] = mkdir(resultsDir);
 
@@ -66,24 +66,24 @@ switch iAcq
         % Regularization
         muBtv = 10^4; muCtv = 10^4;
         muBswtv = 10^3; muCswtv = 10^2;
-        muBwfr = 10^3.5; muCwfr = 10^2;
+        muBswift = 10^3.5; muCswift = 10^2;
 
     case 2
         % Regularization
         muBtv = 10^4; muCtv = 10^4;
         muBswtv = 10^3; muCswtv = 10^0;
-        muBwfr = 10^4; muCwfr = 10^1.5;
+        muBswift = 10^4; muCswift = 10^1.5;
 
     case 3
         % Regularization
         muBtv = 10^4; muCtv = 10^4;
         muBswtv = 10^3; muCswtv = 10^0.5;
-        muBwfr = 10^4; muCwfr = 10^1.5;
+        muBswift = 10^4; muCswift = 10^1.5;
     case 4
         % Regularization
         muBtv = 10^4; muCtv = 10^4;
         muBswtv = 10^3.5; muCswtv = 10^0;
-        muBwfr = 10^4; muCwfr = 10^0;
+        muBswift = 10^4; muCswift = 10^0;
 end
 %% Cropping and finding sample sizes
 
@@ -269,8 +269,8 @@ wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Method
 tic
-[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv, ...
-    m,n,tol,mask(:),w);
+[Bn,Cn,ite] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv, ...
+    m,n,tol,mask(:),wSNR);
 exTime = toc;
 BRSWTV = reshape(Bn*NptodB,m,n);
 CRSWTV = reshape(Cn*NptodB,m,n);
@@ -294,7 +294,7 @@ MetricsSWTV(iAcq) = r;
 
 %% SWIFT
 % First iteration
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBwfr,muCwfr,m,n,tol,mask(:));
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBswift,muCswift,m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);
 
 % Weight map

@@ -25,7 +25,7 @@ F(1) = 1/2*(norm( b - A1*B - A2*C ))^2 + mu1*TVcalc_isotropic(B,m,n,minimask) + 
 ite  = 0;
 error = 1;
 Bprev = B; Cprev = C;
-while abs(error) > tol && ite < 50
+while abs(error) > tol && ite < 100
     ite = ite + 1;
     
     rho = 1;

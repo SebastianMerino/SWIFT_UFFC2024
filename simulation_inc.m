@@ -1,11 +1,11 @@
 clear,clc
 
-dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
-refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\sim_inc';
-% dataDir = 'P:\smerino\simulation_acs\rf_data\24_10_14_inc';
-% refDir = 'P:\smerino\simulation_acs\rf_data\24_10_14_ref';
-% resultsDir = 'P:\smerino\UFFC2024results';
+% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
+% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\sim_inc';
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_inc';
+refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+resultsDir = 'P:\smerino\UFFC2024results\simulation';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
@@ -51,17 +51,17 @@ switch iAcq
         muBtv = 10^3.5; muCtv = 10^3.5;
         muBswtv = 10^3; muCswtv = 10^3;
         muBtvl1 = 10^3.5; muCtvl1 = 10^2;
-        muBwfr = 10^3.5; muCwfr = 10^2;
+        muBswift = 10^3.5; muCswift = 10^2;
     case 2
         muBtv = 10^2.5; muCtv = 10^2.5;
         muBswtv = 10^2.5; muCswtv = 10^0;
         muBtvl1 = 10^3.5; muCtvl1 = 10^1;
-        muBwfr = 10^3.5; muCwfr = 10^1;
+        muBswift = 10^3.5; muCswift = 10^1;
     case 3
         muBtv = 10^3.5; muCtv = 10^3.5;
         muBswtv = 10^2.5; muCswtv = 10^0;
         muBtvl1 = 10^3.5; muCtvl1 = 10^1;
-        muBwfr = 10^3.5; muCwfr = 10^1;
+        muBswift = 10^3.5; muCswift = 10^1;
 end
 
 load(fullfile(dataDir,targetFiles(iAcq).name));
@@ -228,6 +228,7 @@ r.sample = iAcq;
 r.ite = ite;
 r.exTime = exTime;
 MetricsTV(iAcq) = r;
+
 %% SWTV
 % Calculating SNR
 envelope = abs(hilbert(sam1));
@@ -253,8 +254,8 @@ wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Method
 tic
-[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv, ...
-    m,n,tol,mask(:),w);
+[Bn,Cn,ite] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv, ...
+    m,n,tol,mask(:),wSNR);
 exTime = toc;
 BRSWTV = reshape(Bn*NptodB,m,n);
 CRSWTV = reshape(Cn*NptodB,m,n);
@@ -277,7 +278,7 @@ MetricsSWTV(iAcq) = r;
 
 %% SWIFT
 % First iteration
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBwfr,muCwfr,m,n,tol,mask(:));
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBswift,muCswift,m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);
 
 % Weight map

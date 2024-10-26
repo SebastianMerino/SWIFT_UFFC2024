@@ -181,45 +181,7 @@ tol = 1e-3;
 clear mask
 mask = ones(m,n,p);
 
-% Ideal maps
-% [Xq,Zq] = meshgrid(x/1e2,z/1e2);
-xMedium = out.rx(1,:)*100;
-zMedium = out.rz(:,1)*100;
-attIdeal = out.medium.alpha_coeff;
-%% Creating masks
-% Creating masks and ideal map
-Xq = out.rx*100; Zq = out.rz*100;
-rInc = 0.3; c1x = -0.6; c1z = 1.1;
-inc1 = ((Xq-c1x).^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
-rInc = 0.5; c1x = 0.7; c1z = 2;
-inc2 = ((Xq-c1x).^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
-rInc = 0.4; c1x = 0; c1z = 3;
-inc3 = ((Xq-c1x).^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
-back = ones(size(Xq)) & ~(inc1|inc2|inc3);
-se = strel('disk',50,8);
-back = imerode(back,se);
-
-figure, 
-imagesc(xMedium,zMedium,attIdeal, attRange)
-hold on
-contour(xMedium,zMedium,back,1,'w--')
-contour(xMedium,zMedium,inc1,1,'w--')
-contour(xMedium,zMedium,inc2,1,'w--')
-contour(xMedium,zMedium,inc3,1,'w--')
-hold off
-axis image
-colormap turbo
-
-%% TV
-tic
-[Bn,Cn,ite] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
-exTime = toc;
-BRTV = reshape(Bn*NptodB,m,n);
-CRTV = reshape(Cn*NptodB,m,n);
-
-fprintf('\nExecution time: %.4f\n',exTime)
-fprintf('Number of iterations: %d\n',ite)
-%% SWTV
+%% Weights
 % Calculating SNR
 envelope = abs(hilbert(sam1));
 SNR = zeros(m,n);
@@ -242,175 +204,45 @@ SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
 wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
-% Method
-tic
-[Bn,Cn,ite] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv, ...
-    m,n,tol,mask(:),wSNR);
-exTime = toc;
+
+%% CVX
+muBswtv = 10;
+muCswtv = 0.1;
+y = b(:);
+W = wSNR;
+M = m; N = n;
+
+Wdiag = spdiags(W(:),0,M*N,M*N);
+D = spdiags([-ones(M,1) ones(M,1)], [0 1], M,M+1);
+D(:,end) = [];
+D(M,M) = 0;
+Dy = kron(speye(N),D);
+Dy = Wdiag*Dy;
+
+D = spdiags([-ones(N,1) ones(N,1)], [0 1], N,N+1);
+D(:,end) = [];
+D(N,N) = 0;
+Dx = kron(D,speye(M));
+Dx = Wdiag*Dx;
+
+D = [Dx;Dy];
+
+% Start CVX environment
+cvx_begin
+    variable Bn(m*n)
+    variable Cn(m*n)
+    minimize( (1/2) * sum_square(y - A1*Bn - A2*Cn ) + ...
+        muBswtv * norm(D*Bn, 1) + muCswtv * norm(D*Cn, 1))
+cvx_end
+
+%%
 BSWTV = reshape(Bn*NptodB,m,n);
 CSWTV = reshape(Cn*NptodB,m,n);
-fprintf('\nExecution time: %.4f\n',exTime)
-fprintf('Number of iterations: %d\n',ite)
-
-%% SWIFT
-% First iteration
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBswift,muCswift,m,n,tol,mask(:));
-bscMap = reshape(Cn*NptodB,m,n);
-
-% Weight map
-w = (1-reject)*(abs(bscMap)<ratioCutOff)+reject;
-wExt = movmin(w,extension);
-
-% Weight matrices and new system
-W = repmat(wExt,[1 1 p]);
-W = spdiags(W(:),0,m*n*p,m*n*p);
-bw = W*b(:);        
-A1w = W*A1;
-A2w = W*A2;
-
-% Second iteration
-tic
-[Bn,~,ite] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBswift,muCswift,m,n,tol,mask(:),w);
-exTime = toc;
-BSWIFT = reshape(Bn*NptodB,m,n);
-fprintf('\nExecution time: %.4f\n',exTime)
-fprintf('Number of iterations: %d\n',ite)
-
-%% Plotting
-figure('Units','centimeters', 'Position',[5 5 13 8]);
-tiledlayout(2,3, "Padding","tight", 'TileSpacing','compact');
-
-t1 = nexttile([1,2]);
-imagesc(x,z,Bmode,dynRange)
-axis equal
-xlim([x_ACS(1) x_ACS(end)]),
-ylim([z_ACS(1) z_ACS(end)]),
-colormap(t1,gray)
-c = colorbar(t1, 'westoutside');
-c.Label.String = 'dB';
-title('B-mode')
-ylabel('Axial [cm]')
-xlabel('Lateral [cm]')
-% hold on
-% contour(xMedium,zMedium,back,1,'w--')
-% contour(xMedium,zMedium,inc1,1,'w--')
-% contour(xMedium,zMedium,inc2,1,'w--')
-% contour(xMedium,zMedium,inc3,1,'w--')
-% hold off
-t2 = nexttile;
-imagesc(xMedium,zMedium,attIdeal, attRange)
-xlabel('Lateral [cm]'), % ylabel('Axial [cm]')
-colormap(t2,turbo)
-axis equal
-xlim([x_ACS(1) x_ACS(end)]),
-ylim([z_ACS(1) z_ACS(end)]),
-title('Ideal')
-c = colorbar;
-c.Label.String = 'ACS [db/cm/MHz]';
-
-t1 = nexttile; 
-imagesc(x_ACS,z_ACS,BRTV, attRange)
-colormap(t1,turbo)
-axis image
-title('RSLD')
-ylabel('Axial [cm]')
-xlabel('Lateral [cm]')
-
-t1 = nexttile; 
+figure,
 imagesc(x_ACS,z_ACS,BSWTV, attRange)
-colormap(t1,turbo)
+colormap('turbo')
 axis image
 title('SWTV-ACE')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-
-t4 = nexttile; 
-imagesc(x_ACS,z_ACS,BSWIFT, attRange)
-colormap(t4,turbo)
-axis image
-title('SWIFT')
-c = colorbar;
-c.Label.String = 'ACS [db/cm/MHz]';
-% ylabel('Axial [cm]')
-xlabel('Lateral [cm]')
-
-fontsize(gcf,8,'points')
-
-%% Metrics
-[X,Z] = meshgrid(x_ACS,z_ACS);
-[Xq,Zq] = meshgrid(xMedium,zMedium);
-rsldInt = interp2(X,Z,BRTV,Xq,Zq);
-swtvInt = interp2(X,Z,BSWTV,Xq,Zq);
-swiftInt = interp2(X,Z,BSWIFT,Xq,Zq);
-
-T = struct2table([
-    getMetrics(rsldInt,back,1,'TV','back');
-    getMetrics(rsldInt,inc1,0.5,'TV','inc1');
-    getMetrics(rsldInt,inc2,0.5,'TV','inc2');
-    getMetrics(rsldInt,inc3,1,'TV','inc3');
-    getMetrics(swtvInt,back,1,'SWTV','back');
-    getMetrics(swtvInt,inc1,0.5,'SWTV','inc1');
-    getMetrics(swtvInt,inc2,0.5,'SWTV','inc2');
-    getMetrics(swtvInt,inc3,1,'SWTV','inc3');
-    getMetrics(swiftInt,back,1,'SWIFT','back');
-    getMetrics(swiftInt,inc1,0.5,'SWIFT','inc1');
-    getMetrics(swiftInt,inc2,0.5,'SWIFT','inc2');
-    getMetrics(swiftInt,inc3,1,'SWIFT','inc3') ]);
-
-%%
-cbPlacement = 'eastoutside';
-figure('Units','centimeters', 'Position',[5 5 11 8])
-tl = tiledlayout(2,2, "Padding","compact", 'TileSpacing','compact');
-t1 = nexttile;
-imagesc(x,z,Bmode,dynRange)
-axis equal
-xlim([x_ACS(1) x_ACS(end)]),
-ylim([z_ACS(1) z_ACS(end)]),
-colormap(t1,gray)
-c = colorbar(t1, cbPlacement);
-c.Label.String = 'dB';
-title('Bmode')
-xlabel('Lateral [cm]')
-ylabel('Axial [cm]')
-% hold on
-% contour(xMedium,zMedium,back,1,'w--')
-% contour(xMedium,zMedium,inc1,1,'w--')
-% contour(xMedium,zMedium,inc2,1,'w--')
-% contour(xMedium,zMedium,inc3,1,'w--')
-% hold off
-
-t2 = nexttile; 
-imagesc(x_ACS,z_ACS,bscMap, bsRange)
-colormap(t2,parula)
-axis image
-title('\DeltaBSC')
-c = colorbar(t2, cbPlacement);
-c.Label.String = 'dB/cm';
-xlabel('Lateral [cm]')
-ylabel('Axial [cm]')
-
-t3 = nexttile([1,2]); 
-imagesc(x_ACS,z_ACS,w, [0 1])
-colormap(t3,parula)
-axis image
-title('Weights')
-c = colorbar(t3, cbPlacement);
-xlabel('Lateral [cm]')
-ylabel('Axial [cm]')
-fontsize(gcf,9,'points')
-
-%%
-save_all_figures_to_directory(resultsDir,['simInc',num2str(iAcq),'Fig'],'svg');
-close all
-
-writetable(T,fullfile(resultsDir,'multiInc.xlsx'))
-
-%%
-function r = getMetrics(image,mask,gt,method,region)
-r.mean = mean(image(mask),'all','omitmissing');
-r.std = std(image(mask),[],'all','omitmissing');
-r.nrmse = sqrt(mean((image(mask) - gt).^2,'all','omitmissing'))/gt;
-r.nbias = mean(image(mask) - gt,'all','omitmissing')/gt;
-r.method = method;
-r.region = region;
-end
+colorbar

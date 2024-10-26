@@ -52,8 +52,8 @@ while abs(error) > tol && ite < 100
     error = sqrt(norm(B - Bprev).^2 + norm(C - Cprev).^2);
     Cprev = C; Bprev = B;
 end
-disp('Number of iterations: ')
-disp(ite)
+% disp('Number of iterations: ')
+% disp(ite)
 % figure,plot(F)
 end
 

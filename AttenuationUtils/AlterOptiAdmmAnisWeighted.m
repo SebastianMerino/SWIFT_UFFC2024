@@ -1,4 +1,4 @@
-function [B,C,F] = AlterOptiAdmmAnisWeighted(A1,A2,b,mu1,mu2,m,n,tol,mask,W)
+function [B,C,ite] = AlterOptiAdmmAnisWeighted(A1,A2,b,mu1,mu2,m,n,tol,mask,W)
 % Solver for SLD with Anisotropic TV regularization for ACS and weighted 
 % TV regularization for BSC.
 %
@@ -31,7 +31,7 @@ ite  = 0;
 error = 1;
 
 Bprev = B; Cprev = C;
-while abs(error) > tol && ite < 50
+while abs(error) > 0.1 && ite < 30
     ite = ite + 1;
     
     rho = 1;
@@ -53,9 +53,7 @@ while abs(error) > tol && ite < 50
     error = sqrt(norm(B - Bprev).^2 + norm(C - Cprev).^2);
     Cprev = C; Bprev = B;
 end
-disp('Number of iterations: ')
-disp(ite)
-
+% figure,plot(F)
 end
 
 

@@ -2,17 +2,17 @@
 % ======================================================================
 %% PHANTOMSSS
 clear, clc
-dataDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
-refDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\phantoms';
+% dataDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\phantoms';
 
-% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
-% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
-% resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-02-20\BS_8_12';
+dataDir = ['C:\Users\smerino.C084288\Documents\Datasets\' ...
+    'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
+refDir = ['C:\Users\smerino.C084288\Documents\Datasets\' ...
+    'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+resultsDir = 'P:\smerino\UFFC2024results\phantoms';
 
 rawFiles = dir([dataDir,'\*.rf']);
 targetFiles = dir([dataDir,'\*.mat']);
@@ -276,11 +276,12 @@ for jj=1:n
 end
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
-w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
+wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % computation
 tic
-[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv,m,n,tol,mask(:),w);
+[Bn,Cn,ite] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv, ...
+    m,n,tol,mask(:),wSNR);
 exTime = toc;
 BRBC = (reshape(Bn*NptodB,m,n));
 CRBC = (reshape(Cn,m,n));
