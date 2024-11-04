@@ -17,6 +17,7 @@ blocksize = 8;     % Block size in wavelengths
 freq_L = 3.5e6; freq_H = 8.5e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
+tol = 1e-3;
 
 % New simu
 referenceAtt    = 0.6;
@@ -188,7 +189,6 @@ b = (log(Sp) - log(Sd)) - (compensation);
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
 A = [A1 A2];
-tol = 1e-3;
 clear mask
 mask = ones(m,n,p);
 

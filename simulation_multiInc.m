@@ -1,11 +1,11 @@
-clear,clc
+setup,
 
-% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_19_multiInc';
-% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_multiInc';
-dataDir = 'P:\smerino\simulation_acs\rf_data\24_10_19_multiInc';
-refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-resultsDir = 'P:\smerino\UFFC2024results\simulation';
+dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_19_multiInc';
+refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_multiInc';
+% dataDir = 'P:\smerino\simulation_acs\rf_data\24_10_19_multiInc';
+% refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+% resultsDir = 'P:\smerino\UFFC2024results\simulation';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
@@ -17,6 +17,7 @@ blocksize = 8;     % Block size in wavelengths
 freq_L = 3.5e6; freq_H = 8.5e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
 ratio_zx        = 3/2;
+tol = 1e-3;
 
 % New simu
 referenceAtt    = 0.6;
@@ -177,7 +178,6 @@ b = (log(Sp) - log(Sd)) - (compensation);
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
 A = [A1 A2];
-tol = 1e-3;
 clear mask
 mask = ones(m,n,p);
 

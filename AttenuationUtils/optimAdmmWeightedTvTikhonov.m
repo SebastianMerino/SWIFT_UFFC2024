@@ -14,7 +14,7 @@ Atb = A'*b;
 [u,~] = cgs(AtA,Atb);
 B = reshape(u(1:end/2),m,n);
 C = reshape(u(end/2+1:end),m,n);
-%figure(109); imagesc(8.686*reshape(B,m,n)); colormap pink; caxis([0 1.2])
+
 B = B(:);
 C = C(:);
 D = 0;
@@ -27,7 +27,7 @@ F(1) = 1/2*(norm( b - A1*B - A2*C ))^2 + ...
 ite  = 0;
 error = 1;
 rho = 1;
-Bprev = B; Cprev = C;
+Bprev = B;
 while abs(error) > tol && ite < 100
     ite = ite + 1;
     
@@ -49,12 +49,11 @@ while abs(error) > tol && ite < 100
     v = v + A1*B + A2*C + D - b;
     F(ite+1,1) = 1/2*(norm( b - A1*B - A2*C ))^2 + ...
     mu1*TVcalc_isotropic(B,m,n,W) + mu2*sum(abs(Wdiag*C(:)),'all');
-    error = sqrt(norm(B - Bprev).^2 + norm(C - Cprev).^2);
-    Cprev = C; Bprev = B;
+   
+    error = norm(B - Bprev)/norm(Bprev);
+    Bprev = B;
 end
-% disp('Number of iterations: ')
-% disp(ite)
-% figure,plot(F)
+
 end
 
 
