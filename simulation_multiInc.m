@@ -333,7 +333,12 @@ c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-
+% hold on
+% contour(xMedium,zMedium,back,1,'w--')
+% contour(xMedium,zMedium,inc1,1,'w--')
+% contour(xMedium,zMedium,inc2,1,'w--')
+% contour(xMedium,zMedium,inc3,1,'w--')
+% hold off
 fontsize(gcf,8,'points')
 
 %% Metrics
