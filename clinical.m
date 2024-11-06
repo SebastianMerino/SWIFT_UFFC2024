@@ -5,7 +5,7 @@
 setup,
 baseDir = 'C:\Users\sebas\Documents\Data\Attenuation\Thyroid_Data_PUCP_UTD';
 refsDir = 'C:\Users\sebas\Documents\Data\Attenuation\REFERENCES';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\clinical';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024Results\clinical';
 
 tableName = 'clinical.xlsx';
 T = readtable('params.xlsx');
@@ -40,6 +40,8 @@ attRange = [0.2,2];
 bsRange = [-15 15];
 
 dataCols = zeros(3,12);
+
+iAcq = 1;
 %%
 for iAcq = 1:3
 patient = num2str(T.patient(iAcq));
@@ -94,7 +96,7 @@ else
     z_inf = T.zInf(iAcq); z_sup = T.zSup(iAcq);
 
 end
-
+% x_sup = 2.5; z_sup = 2.3; 
 %%
 
 % Limits for ACS estimation
@@ -331,7 +333,7 @@ maskThyroidACS = interp2(X,Z,maskThyroid,Xq,Zq, 'nearest');
 se = strel('diamond',2);
 maskThyroidACS = imerode(maskThyroidACS,se);
 maskNoduleACS = imerode(maskNoduleACS,se);
-figure, imagesc(x_ACS,z_ACS,maskThyroidACS|maskNoduleACS)
+% figure, imagesc(x_ACS,z_ACS,maskThyroidACS|maskNoduleACS)
 
 patCol(iAcq) = {patient}; 
 classCol(iAcq) = {class};
