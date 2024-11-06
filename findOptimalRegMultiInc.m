@@ -7,7 +7,7 @@ setup,
 % dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14_multiInc';
 % refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_14_ref';
 % resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\multiInc\opt';
-dataDir = 'P:\smerino\simulation_acs\rf_data\24_10_19_multiInc';
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_11_05_multiInc';
 refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
 resultsDir = 'P:\smerino\UFFC2024results\opt';
 
@@ -47,10 +47,10 @@ attRange = [0.4 1.1];
 x_inf = -1.5; x_sup = 5;
 z_inf = 0.4; z_sup = 3.7;
 
-iAcq = 1;
+iAcq = 3;
 %% Setting up
 
-for iAcq = 1:length(targetFiles)
+for iAcq = 3 % 1:length(targetFiles)
 load(fullfile(dataDir,targetFiles(iAcq).name));
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
@@ -233,7 +233,7 @@ axis image
 title('Ideal')
 c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
-
+pause(0.1)
 
 %% RSLD
 muB = 10.^(1:0.5:4);
@@ -284,6 +284,7 @@ r.method = {'RSLD'};
 r.simu = iAcq;
 MetricsTV(iAcq) = r;
 
+pause(0.1)
 %% British Columbia Approach
 envelope = abs(hilbert(sam1));
 
@@ -363,6 +364,7 @@ r.method = {'SWTV'};
 r.simu = iAcq;
 MetricsSWTV(iAcq) = r;
 
+pause(0.1)
 %% Minimizing BS log ratio and WEIGHTS
 muB = 10.^(2.5:0.5:4);
 muC = 10.^(-0.5:0.5:2);
@@ -437,6 +439,7 @@ r.method = {'SWIFT'};
 r.simu = iAcq;
 MetricsSWIFT(iAcq) = r;
 
+pause(0.1)
 %%
 save_all_figures_to_directory(resultsDir,['simMulltiInc',num2str(iAcq),'Figure']);
 close all
@@ -448,6 +451,6 @@ results1 = struct2table(MetricsTV);
 results2 = struct2table(MetricsSWTV);
 results3 = struct2table(MetricsSWIFT);
 
-T = [results1;results2;results3];
+T = [results1;results2;results3]
 writetable(T,fullfile(resultsDir,tableName),...
      'WriteRowNames',true);

@@ -1,5 +1,5 @@
 
-% This example simulates an inclusion, with multifocal transmission
+% This example simulates a phantom with multiple inclusions
 % and focal number 2.
 % Created on June 25th, 2024
 % Author: Sebastian Merino
@@ -7,7 +7,7 @@
 function [] = simulationMultiInc(BaseDir)
 
 addpath(genpath(pwd))
-simuNames = {'multiInc1','multiInc2'};
+simuNames = {'multiInc4'};
 % mkdir(BaseDir)
 
 % medium parameters
@@ -63,7 +63,7 @@ for iSim = 1:length(simuNames)
 
     % Background
     background_std = 0.004;
-    background_alpha = 1;       % [dB/(MHz^y cm)]
+    background_alpha = 0.5;       % [dB/(MHz^y cm)]
     medium = addRegionSimu([],c0,rho0,background_std,...
         background_alpha,ones(Nx,Ny));
 
@@ -71,28 +71,24 @@ for iSim = 1:length(simuNames)
     cz = 1.1e-2; cx = -0.6e-2;
     r = 0.3e-2;
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
-    inc_alpha = 0.5; inc_std = background_std*4;
+    inc_alpha = 1; inc_std = background_std*4;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...
         inc_alpha,maskNodule);
 
     % Other inclusion
-    cz = 2e-2; cx = 0.7e-2;
+    cz = 1.8e-2; cx = 0.6e-2;
     r = 0.5e-2; 
-    if iSim ==1
-        inc_std = background_std/4;
-    else
-        inc_std = background_std*4;
-    end
-    maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
-    inc_alpha = 0.5;
-    medium = addRegionSimu(medium,c0,rho0,inc_std,...
-        inc_alpha,maskNodule);
-
-    % Other inclusion
-    cz = 3e-2; cx = 0;
-    r = 0.4e-2; inc_std = background_std*4;
+    inc_std = background_std/4;
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
     inc_alpha = 1;
+    medium = addRegionSimu(medium,c0,rho0,inc_std,...
+        inc_alpha,maskNodule);
+
+    % Other inclusion
+    cz = 2.8e-2; cx = -0.4e-2;
+    r = 0.4e-2; inc_std = background_std*4;
+    maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
+    inc_alpha = 0.5;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...
         inc_alpha,maskNodule);
 

@@ -1,11 +1,11 @@
 setup,
 
-dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_19_multiInc';
-refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_multiInc';
-% dataDir = 'P:\smerino\simulation_acs\rf_data\24_10_19_multiInc';
-% refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-% resultsDir = 'P:\smerino\UFFC2024results\simulation';
+% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_19_multiInc';
+% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_multiInc';
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_11_05_multiInc';
+refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+resultsDir = 'P:\smerino\UFFC2024results\simulation';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
@@ -40,10 +40,10 @@ bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
 % Region for attenuation imaging
-x_inf = -1.5; x_sup = 5;
+x_inf = -1.5; x_sup = 1.5;
 z_inf = 0.4; z_sup = 3.7;
 
-iAcq = 1;
+iAcq = 3;
 
 %% Setting up
 
@@ -120,7 +120,7 @@ windowing = windowing*ones(1,nx);
 % For looping
 Nref = length(refFiles);
 
-if iAcq == 1
+if true; % iAcq == 1
 % Memory allocation
 Sp_ref = zeros(m,n,p);
 Sd_ref = zeros(m,n,p);
@@ -191,24 +191,24 @@ attIdeal = out.medium.alpha_coeff;
 Xq = out.rx*100; Zq = out.rz*100;
 rInc = 0.3; c1x = -0.6; c1z = 1.1;
 inc1 = ((Xq-c1x).^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
-rInc = 0.5; c1x = 0.7; c1z = 2;
+rInc = 0.5; c1x = 0.6; c1z = 1.8;
 inc2 = ((Xq-c1x).^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
-rInc = 0.4; c1x = 0; c1z = 3;
+rInc = 0.4; c1x = -0.4; c1z = 2.8;
 inc3 = ((Xq-c1x).^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
 back = ones(size(Xq)) & ~(inc1|inc2|inc3);
 se = strel('disk',50,8);
 back = imerode(back,se);
 
-figure, 
-imagesc(xMedium,zMedium,attIdeal, attRange)
-hold on
-contour(xMedium,zMedium,back,1,'w--')
-contour(xMedium,zMedium,inc1,1,'w--')
-contour(xMedium,zMedium,inc2,1,'w--')
-contour(xMedium,zMedium,inc3,1,'w--')
-hold off
-axis image
-colormap turbo
+% figure, 
+% imagesc(xMedium,zMedium,attIdeal, attRange)
+% hold on
+% contour(xMedium,zMedium,back,1,'w--')
+% contour(xMedium,zMedium,inc1,1,'w--')
+% contour(xMedium,zMedium,inc2,1,'w--')
+% contour(xMedium,zMedium,inc3,1,'w--')
+% hold off
+% axis image
+% colormap turbo
 
 %% TV
 tic
@@ -291,12 +291,12 @@ c.Label.String = 'dB';
 title('B-mode')
 ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
-% hold on
-% contour(xMedium,zMedium,back,1,'w--')
-% contour(xMedium,zMedium,inc1,1,'w--')
-% contour(xMedium,zMedium,inc2,1,'w--')
-% contour(xMedium,zMedium,inc3,1,'w--')
-% hold off
+hold on
+contour(xMedium,zMedium,back,1,'w--')
+contour(xMedium,zMedium,inc1,1,'w--')
+contour(xMedium,zMedium,inc2,1,'w--')
+contour(xMedium,zMedium,inc3,1,'w--')
+hold off
 t2 = nexttile;
 imagesc(xMedium,zMedium,attIdeal, attRange)
 xlabel('Lateral [cm]'), % ylabel('Axial [cm]')
@@ -400,8 +400,8 @@ ylabel('Axial [cm]')
 fontsize(gcf,9,'points')
 
 %%
-save_all_figures_to_directory(resultsDir,['simInc',num2str(iAcq),'Fig'],'svg');
-close all
+save_all_figures_to_directory(resultsDir,['simMultiInc',num2str(iAcq),'Fig'],'svg');
+% close all
 
 writetable(T,fullfile(resultsDir,'multiInc.xlsx'))
 
