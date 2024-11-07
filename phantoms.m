@@ -2,17 +2,17 @@
 % ======================================================================
 %% PHANTOMSSS
 clear, clc
-% dataDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
-%     '\ID316V2\06-08-2023-Generic'];
-% refDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
-%     '\ID544V2\06-08-2023-Generic'];
-% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\phantoms';
+dataDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
+    '\ID316V2\06-08-2023-Generic'];
+refDir = ['C:\Users\sebas\Documents\Data\Attenuation' ...
+    '\ID544V2\06-08-2023-Generic'];
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\phantoms';
 
-dataDir = ['C:\Users\smerino.C084288\Documents\Datasets\' ...
-    'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
-refDir = ['C:\Users\smerino.C084288\Documents\Datasets\' ...
-    'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
-resultsDir = 'P:\smerino\UFFC2024results\phantoms';
+% dataDir = ['C:\Users\smerino.C084288\Documents\Datasets\' ...
+%     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\smerino.C084288\Documents\Datasets\' ...
+%     'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+% resultsDir = 'P:\smerino\UFFC2024results\phantoms';
 
 rawFiles = dir([dataDir,'\*.rf']);
 targetFiles = dir([dataDir,'\*.mat']);

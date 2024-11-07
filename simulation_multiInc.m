@@ -1,11 +1,11 @@
 setup,
 
-% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_10_19_multiInc';
-% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_multiInc';
-dataDir = 'P:\smerino\simulation_acs\rf_data\24_11_05_multiInc';
-refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-resultsDir = 'P:\smerino\UFFC2024results\simulation';
+dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_11_05_multiInc';
+refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_multiInc';
+% dataDir = 'P:\smerino\simulation_acs\rf_data\24_11_05_multiInc';
+% refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+% resultsDir = 'P:\smerino\UFFC2024results\simulation';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
@@ -253,6 +253,7 @@ fprintf('\nExecution time: %.4f\n',exTime)
 fprintf('Number of iterations: %d\n',ite)
 
 %% SWIFT
+% muBswift = 10^3.3; muCswift = 10^0.8;
 % First iteration
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBswift,muCswift,m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);

@@ -1,11 +1,11 @@
 setup,
 
-% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_layered';
-% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_layered';
-dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_layered';
-refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-resultsDir = 'P:\smerino\UFFC2024results\simulation';
+dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_layered';
+refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_layered';
+% dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_layered';
+% refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+% resultsDir = 'P:\smerino\UFFC2024results\simulation';
 
 [~,~] = mkdir(resultsDir);
 
@@ -45,7 +45,7 @@ groundTruthBottom = [1,1,1,0.75,0.75];
 x_inf = -1.5; x_sup = 1.5;
 z_inf = 0.4; z_sup = 3.7;
 
-iAcq = 1;
+iAcq = 3;
 %% For looping
 
 for iAcq = 1:4
@@ -56,7 +56,10 @@ dx = x(2)-x(1);
 dz = z(2)-z(1);
 x = x*1e2; % [cm]
 z = z*1e2; % [cm]
-z = z-3.5*medium.sound_speed_ref/6.66e6*100/4;
+
+if iAcq == 4
+    z = z-0.02;
+end
 
 sam1 = rf(:,:,1);
 
