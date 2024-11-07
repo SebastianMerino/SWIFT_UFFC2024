@@ -50,7 +50,7 @@ z_inf = 0.4; z_sup = 3.7;
 
 %% Setting up
 
-for iAcq = 4:length(targetFiles)
+for iAcq = 5:length(targetFiles)
 load(fullfile(dataDir,targetFiles(iAcq).name));
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
@@ -58,7 +58,7 @@ dx = x(2)-x(1);
 dz = z(2)-z(1);
 x = x*1e2; % [cm]
 z = z*1e2; % [cm]
-z = z-3.5*medium.sound_speed_ref/6.66e6*100/4;
+% z = z-3.5*medium.sound_speed_ref/6.66e6*100/4;
 
 sam1 = rf(:,:,1);
 dynRange = [-50,0];

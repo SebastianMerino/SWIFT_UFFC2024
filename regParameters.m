@@ -1,11 +1,11 @@
 clear,clc
 
-dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
-refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\reg';
-% dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_inc';
-% refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-% resultsDir = 'P:\smerino\UFFC2024results\simulation';
+% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
+% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\reg';
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_inc';
+refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+resultsDir = 'P:\smerino\UFFC2024results\reg';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
@@ -188,8 +188,11 @@ inc = (Xq.^2 + (Zq-2).^2)<= (rInc-0.1)^2;
 back = (Xq.^2 + (Zq-2).^2) >= (rInc+0.1)^2;
 
 %% TV
+disp('RSLD')
 muRange = 10.^(0:0.25:6);
-rmse = zeros(size(muRange));
+rmseBack = zeros(size(muRange));
+rmseInc = zeros(size(muRange));
+cnr = zeros(size(muRange));
 for iMu = 1:length(muRange)
     mutv = muRange(iMu);
     tic
@@ -203,26 +206,39 @@ for iMu = 1:length(muRange)
     % title('RSLD')
     % % ylabel('Axial [cm]')
     % xlabel('Lateral [cm]')
-    % pause(0.01)
+    pause(0.01)
 
     AttInterp = interp2(X,Z,BRTV,Xq,Zq);
-    mseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
-        "omitnan") ;
-    mseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
-        "omitnan");
-    rmse(iMu) = (sqrt(mseInc) + sqrt(mseBack))/2;
+    r.meanBack = mean(AttInterp(back),"omitnan");
+    r.stdBack = std(AttInterp(back),"omitnan");
+    r.meanInc = mean(AttInterp(inc),"omitnan");
+    r.stdInc = std(AttInterp(inc),"omitnan");
+    r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
+    r.biasInc = mean( AttInterp(inc) - groundTruthInc(iAcq),"omitnan");
+    r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
+    r.rmseInc = sqrt(mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,"omitnan"));
+    rmseBack(iMu) = r.rmseBack ;
+    rmseInc(iMu) = r.rmseInc ;
+    cnr(iMu) = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
 end
+save(fullfile(resultsDir,'rsld.mat'),"rmseBack","rmseInc","cnr","muRange")
 
 figure,
-semilogx(muRange,rmse)
+semilogx(muRange,(rmseBack/0.5 + rmseInc)/2)
 grid on
 xlabel('\mu')
 ylabel('RMSE')
 
-save(fullfile(resultsDir,'rsld.mat'),"rmse","muRange")
+figure,
+semilogx(muRange,cnr)
+grid on
+xlabel('\mu')
+ylabel('CNR')
 
 
 %% SWTV
+disp('SWTV')
+
 % Calculating SNR
 envelope = abs(hilbert(sam1));
 SNR = zeros(m,n);
@@ -246,41 +262,59 @@ desvSNR = abs(SNR-SNRopt)/SNRopt*100;
 wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Finding optimal reg parameters
-muB = 10.^(2.5:0.25:5);
-muC = 10.^(0:0.25:3);
+muB = 10.^(1.5:0.25:4.5);
+muC = 10.^(-1.5:0.25:2.5);
+rmseBack = zeros(length(muC),length(muB));
+rmseInc = zeros(length(muC),length(muB));
+cnr = zeros(length(muC),length(muB));
 
-minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
         tic
         [Bn,~] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muB(mmB),muC(mmC),...
-        m,n,tol,mask(:),wSNR);
+        m,n,tol*10,mask(:),wSNR);
         toc
+        pause(0.01)
         BSWTV = reshape(Bn*NptodB,m,n);
 
         AttInterp = interp2(X,Z,BSWTV,Xq,Zq);
-        mseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
-            "omitnan") ;
-        mseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
-            "omitnan");
-        rmse(mmC,mmB) = (sqrt(mseInc) + sqrt(mseBack))/2;
+        r.meanBack = mean(AttInterp(back),"omitnan");
+        r.stdBack = std(AttInterp(back),"omitnan");
+        r.meanInc = mean(AttInterp(inc),"omitnan");
+        r.stdInc = std(AttInterp(inc),"omitnan");
+        r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
+        r.biasInc = mean( AttInterp(inc) - groundTruthInc(iAcq),"omitnan");
+        r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
+        r.rmseInc = sqrt(mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,"omitnan"));
+        % rmse(mmC,mmB) = (r.rmseBack + r.rmseInc)/2;
+        rmseBack(mmC,mmB) = r.rmseBack ;
+        rmseInc(mmC,mmB) = r.rmseInc ;
+        cnr(mmC,mmB) = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
     end
 end
-
+save(fullfile(resultsDir,'swtv.mat'),"rmseBack","rmseInc","cnr","muB","muC")
 
 figure,
-surf(log10(muB),log10(muC),rmse)
+imagesc(log10(muB),log10(muC),(rmseBack/0.5 + rmseInc)/2)
 colorbar,
 xlabel('log_{10}(\mu_B)')
 ylabel('log_{10}(\mu_C)')
-save(fullfile(resultsDir,'swtv.mat'),"rmse","muB","muC")
+
+figure,
+imagesc(log10(muB),log10(muC),cnr)
+colorbar,
+xlabel('log_{10}(\mu_B)')
+ylabel('log_{10}(\mu_C)')
 
 
 %% SWIFT
+disp('SWIFT')
 
-muB = 10.^(2.5:0.25:5);
-muC = 10.^(0:0.25:3);
-rmse = zeros(length(muC),length(muB));
+muB = 10.^(1.5:0.25:4.5);
+muC = 10.^(-1.5:0.25:2.5);
+rmseBack = zeros(length(muC),length(muB));
+rmseInc = zeros(length(muC),length(muB));
+cnr = zeros(length(muC),length(muB));
 
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -310,19 +344,126 @@ for mmB = 1:length(muB)
         pause(0.01)
 
         AttInterp = interp2(X,Z,BSWIFT,Xq,Zq);
-        mseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
-            "omitnan") ;
-        mseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
-            "omitnan");
-        rmse(mmC,mmB) = (sqrt(mseInc) + sqrt(mseBack))/2;
+        r.meanBack = mean(AttInterp(back),"omitnan");
+        r.stdBack = std(AttInterp(back),"omitnan");
+        r.meanInc = mean(AttInterp(inc),"omitnan");
+        r.stdInc = std(AttInterp(inc),"omitnan");
+        r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
+        r.biasInc = mean( AttInterp(inc) - groundTruthInc(iAcq),"omitnan");
+        r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
+        r.rmseInc = sqrt(mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,"omitnan"));
+        % rmse(mmC,mmB) = (r.rmseBack + r.rmseInc)/2;
+        rmseBack(mmC,mmB) = r.rmseBack ;
+        rmseInc(mmC,mmB) = r.rmseInc ;
+        cnr(mmC,mmB) = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
     end
 end
-
+%%
+save(fullfile(resultsDir,'swift.mat'),"rmseBack","rmseInc","cnr","muB","muC")
+% load(fullfile(resultsDir,'swift.mat'),"rmse","muB","muC")
 
 figure,
-surf(log10(muB),log10(muC),rmse)
+imagesc(log10(muB),log10(muC),(rmseBack/0.5 + rmseInc)/2)
 colorbar,
 xlabel('log_{10}(\mu_B)')
 ylabel('log_{10}(\mu_C)')
+axis image
 
-save_all_figures_to_directory(resultsDir,['sim',num2str(iAcq),'Figure']);
+figure,
+imagesc(log10(muB),log10(muC),cnr)
+colorbar,
+xlabel('log_{10}(\mu_B)')
+ylabel('log_{10}(\mu_C)')
+axis image
+%%
+save_all_figures_to_directory(resultsDir,['sim',num2str(iAcq),'Fig']);
+close all,
+%%
+
+rsld = load(fullfile(resultsDir,'rsld.mat'));
+swtv = load(fullfile(resultsDir,'swtv.mat'));
+swift = load(fullfile(resultsDir,'swift.mat'));
+
+figure("Units","centimeters", "Position",[5 5 18 5]) 
+tiledlayout(1,3, "TileSpacing","compact", "Padding","compact")
+% nexttile([1,2])
+% nexttile, axis off
+rsld.nrmse = (rsld.rmseBack/0.5 + rsld.rmseInc)/2;
+nexttile,
+plot(log10(rsld.muRange),rsld.nrmse)
+xlabel('log_{10}(\mu)')
+ylabel('NRMSE')
+grid on
+xlim([0.5, 6])
+ylim([0.05 1])
+title('RSLD')
+
+swtv.nrmse = (swtv.rmseBack/0.5 + swtv.rmseInc)/2;
+nexttile,
+imagesc(log10(swtv.muB),log10(swtv.muC),swtv.nrmse, [0.1 1])
+% colorbar,
+xlabel('log_{10}(\mu_B)')
+ylabel('log_{10}(\mu_C)')
+axis image
+title('SWTV-ACE')
+ylim([-1.4 2.6])
+
+swift.nrmse = (swift.rmseBack/0.5 + swift.rmseInc)/2;
+nexttile,
+imagesc(log10(swift.muB),log10(swift.muC),swift.nrmse, [0.1 1])
+c = colorbar;
+c.Label.String = 'NRMSE';
+xlabel('log_{10}(\mu_B)')
+% ylabel('log_{10}(\mu_C)')
+axis image
+title('SWIFT')
+ylim([-1.4 2.6])
+hold on 
+contour(log10(swift.muB),log10(swift.muC),swift.nrmse<min(swtv.nrmse(:)),...
+    1,'w--', 'LineWidth',1.5)
+% contour(log10(swift.muB),log10(swift.muC),swift.nrmse<(swtv.nrmse),...
+%     1,'w--', 'LineWidth',1.5)
+hold off
+
+
+%%
+figure("Units","centimeters", "Position",[5 5 18 5]) 
+tiledlayout(1,3, "TileSpacing","compact", "Padding","compact")
+% nexttile([1,2])
+% nexttile, axis off
+nexttile,
+plot(log10(rsld.muRange),rsld.cnr)
+xlabel('log_{10}(\mu)')
+ylabel('CNR')
+grid on
+xlim([0.5, 6])
+ylim([0.05 1])
+title('RSLD')
+
+nexttile,
+imagesc(log10(swtv.muB),log10(swtv.muC),swtv.cnr, [0,7])
+% colorbar,
+xlabel('log_{10}(\mu_B)')
+ylabel('log_{10}(\mu_C)')
+axis image
+title('SWTV-ACE')
+ylim([-1.4 2.6])
+
+nexttile,
+imagesc(log10(swift.muB),log10(swift.muC),swift.cnr, [0,7])
+c = colorbar;
+c.Label.String = 'CNR';
+xlabel('log_{10}(\mu_B)')
+% ylabel('log_{10}(\mu_C)')
+axis image
+title('SWIFT')
+ylim([-1.4 2.6])
+hold on 
+contour(log10(swift.muB),log10(swift.muC),swift.cnr>max(swtv.cnr(:)),...
+    1,'w--', 'LineWidth',1.5)
+% contour(log10(swift.muB),log10(swift.muC),swift.cnr>(swtv.cnr),...
+%     1,'w--', 'LineWidth',1.5)
+hold off
+
+% save_all_figures_to_directory(resultsDir,'regFinal','svg');
+% close all
