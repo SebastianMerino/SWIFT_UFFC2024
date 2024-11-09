@@ -5,13 +5,13 @@
 
 setup,
 
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+baseDir = ['C:\Users\sebas\Documents\MATLAB\' ...
     'LiverAcquisition_24_09_07'];
 
 sampleDir = fullfile(baseDir,'samples');
 refsDir = fullfile(baseDir,'refs','joined');
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\liver_v2';
-figsDir = 'C:\Users\sebas\Pictures\Journal2024\liver_v2';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024Results\liver_v2';
+figsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024Results\liver_v2';
 
 [~,~,~] = mkdir(resultsDir);
 [~,~,~] = mkdir(figsDir);
@@ -386,7 +386,7 @@ A1w = W*A1;
 A2w = W*A2;
 
 % Second iteration
-[Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
+[Bn,~,ite] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
 BSWIFT = reshape(Bn*NptodB,m,n);
 
 % %% Weight plot

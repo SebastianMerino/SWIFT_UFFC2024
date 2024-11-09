@@ -287,7 +287,7 @@ A1w = W*A1;
 A2w = W*A2;
 
 % Second iteration
-[Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBswift,muCswift,m,n,tol,mask(:),w);
+[Bn,~,ite] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBswift,muCswift,m,n,tol,mask(:),w);
 BSWIFT = reshape(Bn*NptodB,m,n);
 
 % Weight map
