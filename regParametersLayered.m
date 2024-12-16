@@ -307,11 +307,10 @@ ylabel('log_{10}(\mu_C)')
 %% SWIFT
 disp('SWIFT')
 
-% muB = 10.^(1.5:0.25:4.5);
-% muC = 10.^(-1.5:0.25:2.5);
-muB = 10.^(1.5:0.5:4.5);
-muC = 10.^(-1.5:0.5:2.5);
-rmseTop = zeros(length(muC),length(muB));
+muB = 10.^(1.5:0.25:4.5);
+muC = 10.^(-1.5:0.25:2.5);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+/rmseTop = zeros(length(muC),length(muB));
 rmseBottom = zeros(length(muC),length(muB));
 cnr = zeros(length(muC),length(muB));
 

@@ -1,8 +1,11 @@
 clear,clc
 
-dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
-refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\ablation';
+% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
+% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\ablation';
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_inc';
+refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+resultsDir = 'P:\smerino\UFFC2024results\ablation';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
@@ -394,22 +397,29 @@ xlabel('Lateral [cm]')
 fontsize(gcf,8,'points')
 
 %% Plotting
-figure('Units','centimeters', 'Position',[5 5 12 4]);
-tiledlayout(1,3, "Padding","tight", 'TileSpacing','compact');
+figure('Units','centimeters', 'Position',[5 5 14 4]);
+tiledlayout(1,4, "Padding","tight", 'TileSpacing','compact');
+t1 = nexttile; 
+imagesc(x_ACS,z_ACS,BSWIFT, attRange)
+colormap(t1,turbo)
+axis image
+title('SWIFT')
+ylabel('Axial [cm]')
+xlabel('Lateral [cm]')
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BSWIFT2, attRange)
 colormap(t1,turbo)
 axis image
-title('SWIFT v1')
-ylabel('Axial [cm]')
+title('SWIFT-V1')
+% ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BWFid, attRange)
 colormap(t1,turbo)
 axis image
-title('SWIFT v2')
+title('SWIFT-V2')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
  
@@ -417,7 +427,7 @@ t1 = nexttile;
 imagesc(x_ACS,z_ACS,BWReg, attRange)
 colormap(t1,turbo)
 axis image
-title('SWIFT v3')
+title('SWIFT-V3')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 c = colorbar;

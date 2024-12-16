@@ -1,3 +1,4 @@
+setup,
 clear,clc
 
 % dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
@@ -5,7 +6,7 @@ clear,clc
 % resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\reg';
 dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_inc';
 refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-resultsDir = 'P:\smerino\UFFC2024results\reg';
+resultsDir = 'P:\smerino\UFFC2024results\reg\S5';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
@@ -42,7 +43,7 @@ NptodB = log10(exp(1))*20;
 x_inf = -1.5; x_sup = 1.5;
 z_inf = 0.4; z_sup = 3.7;
 
-iAcq = 2;
+iAcq = 1;
 
 %% Setting up
 
@@ -189,7 +190,7 @@ back = (Xq.^2 + (Zq-2).^2) >= (rInc+0.1)^2;
 
 %% TV
 disp('RSLD')
-muRange = 10.^(0:0.25:6);
+muRange = 10.^(0:0.25:6.5);
 rmseBack = zeros(size(muRange));
 rmseInc = zeros(size(muRange));
 cnr = zeros(size(muRange));
