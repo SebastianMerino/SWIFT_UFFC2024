@@ -1,11 +1,11 @@
 clear,clc
 
-% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
-% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\JournalResults\ablation';
-dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_inc';
-refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-resultsDir = 'P:\smerino\UFFC2024results\ablation';
+dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
+refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024Results\ablation';
+% dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_inc';
+% refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+% resultsDir = 'P:\smerino\UFFC2024results\ablation';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
