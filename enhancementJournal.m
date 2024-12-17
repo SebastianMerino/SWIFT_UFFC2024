@@ -21,7 +21,7 @@ overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
 %% Loading case
-for iAcq = 1:3;
+for iAcq = 1:4
 patient = num2str(T.patient(iAcq));
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
 refDir = fullfile(refsDir,T.reference{iAcq});
@@ -135,6 +135,8 @@ switch iAcq
         z0 = 2.7; zf = 3;
     case 3
         z0 = 1.6; zf = 2.5;
+    case 4
+        z0 = 2.2; zf = 2.7;
 end
 switch iAcq
     case 1
@@ -146,8 +148,9 @@ switch iAcq
     case 3
         x0Inc = 1.4; xfInc = 2.1;
         x0Out = 2.3; xfOut = 3.2;
-    otherwise
-        
+    case 4
+        x0Inc = 1.9; xfInc = 2.4;
+        x0Out = 0.6; xfOut = 1.7;
 end
 yline(z0, 'b--','LineWidth',1.5)
 yline(zf, 'b--','LineWidth',1.5)
@@ -189,6 +192,8 @@ switch iAcq
         incDiameter = 1.3; % before 1.2
     case 3
         incDiameter = 0.85;
+    case 4
+        incDiameter = 1.05;
 end
 disp("Thyroid #"+iAcq)
 underInclusion = mean(latProfile(x>x0Inc & x <xfInc))

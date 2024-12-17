@@ -43,7 +43,7 @@ dataCols = zeros(3,12);
 
 iAcq = 1;
 %%
-for iAcq = 1:3
+for iAcq = 1:4
 patient = num2str(T.patient(iAcq));
 class = T.class(iAcq);
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
@@ -67,7 +67,7 @@ zFull = z*1e2; % [cm]
 BmodeFull = db(hilbert(sam1));
 BmodeFull = BmodeFull - max(BmodeFull(:));
 
-if T.xSup(iAcq) == 0
+if isnan(T.xSup(iAcq))
     % Manual cropping
     figure('Units','centimeters', 'Position',[5 5 15 15]),
     imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
@@ -88,8 +88,10 @@ if T.xSup(iAcq) == 0
     end
     close,
 
-    x_inf = rect(1); x_sup = rect(1)+rect(3);
-    z_inf = rect(2); z_sup = rect(2)+rect(4);
+    x_inf = rect(1)
+    x_sup = rect(1)+rect(3)
+    z_inf = rect(2)
+    z_sup = rect(2)+rect(4)
 
 else
     x_inf = T.xInf(iAcq); x_sup = T.xSup(iAcq);
@@ -347,6 +349,8 @@ dataCols(iAcq,:) = [mean(BRTV(maskNoduleACS)), std(BRTV(maskNoduleACS)),...
 
 fprintf("D ACS, TV: %.2f\n",...
     mean(BRTV(maskThyroidACS)) - mean(BRTV(maskNoduleACS)));
+fprintf("D ACS, SWTV: %.2f\n",...
+    mean(BRSWTV(maskThyroidACS)) - mean(BRSWTV(maskNoduleACS)));
 fprintf("D ACS, SWIFT: %.2f\n",...
     mean(BSWIFT(maskThyroidACS)) - mean(BSWIFT(maskNoduleACS)));
 %% Overlay
