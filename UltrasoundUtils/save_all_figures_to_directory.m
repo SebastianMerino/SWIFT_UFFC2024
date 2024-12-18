@@ -1,7 +1,7 @@
 
 function save_all_figures_to_directory(dir_name,title, varargin)
 % optional argument is other format to save the image
-
+title = char(title);
 figlist=findobj('type','figure');
 number=get(figlist,'Number');
 for i=1:numel(figlist)

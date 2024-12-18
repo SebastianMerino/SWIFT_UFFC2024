@@ -1,11 +1,11 @@
 setup,
 
-dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_11_05_multiInc';
-refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_multiInc';
-% dataDir = 'P:\smerino\simulation_acs\rf_data\24_11_05_multiInc';
-% refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-% resultsDir = 'P:\smerino\UFFC2024results\simulation';
+% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_11_05_multiInc';
+% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_multiInc';
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_11_05_multiInc';
+refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+resultsDir = 'P:\smerino\UFFC2024results\simulation';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
