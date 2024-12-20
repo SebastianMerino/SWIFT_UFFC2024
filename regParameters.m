@@ -6,9 +6,9 @@ clear,clc
 % resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\reg';
 dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_inc';
 refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-resultsDir = 'P:\smerino\UFFC2024results\reg\S5';
+resultsDir0 = 'P:\smerino\UFFC2024results\reg';
 
-[~,~] = mkdir(resultsDir);
+[~,~] = mkdir(resultsDir0);
 targetFiles = dir([dataDir,'\rf*.mat']);
 refFiles = dir([refDir,'\rf*.mat']);
 tableName = 'simuInc.xlsx';
@@ -43,10 +43,11 @@ NptodB = log10(exp(1))*20;
 x_inf = -1.5; x_sup = 1.5;
 z_inf = 0.4; z_sup = 3.7;
 
-iAcq = 1;
 
 %% Setting up
-
+for iAcq = 1:3
+resultsDir = fullfile(resultsDir0,"S"+(iAcq+4));
+mkdir(resultsDir)
 
 load(fullfile(dataDir,targetFiles(iAcq).name));
 
@@ -190,7 +191,7 @@ back = (Xq.^2 + (Zq-2).^2) >= (rInc+0.1)^2;
 
 %% TV
 disp('RSLD')
-muRange = 10.^(0:0.25:6.5);
+muRange = 10.^(0:0.25:7);
 rmseBack = zeros(size(muRange));
 rmseInc = zeros(size(muRange));
 cnr = zeros(size(muRange));
@@ -263,7 +264,7 @@ desvSNR = abs(SNR-SNRopt)/SNRopt*100;
 wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Finding optimal reg parameters
-muB = 10.^(1.5:0.25:4.5);
+muB = 10.^(1.5:0.25:5.5);
 muC = 10.^(-1.5:0.25:2.5);
 rmseBack = zeros(length(muC),length(muB));
 rmseInc = zeros(length(muC),length(muB));
@@ -311,7 +312,7 @@ ylabel('log_{10}(\mu_C)')
 %% SWIFT
 disp('SWIFT')
 
-muB = 10.^(1.5:0.25:4.5);
+muB = 10.^(1.5:0.25:5.5);
 muC = 10.^(-1.5:0.25:2.5);
 rmseBack = zeros(length(muC),length(muB));
 rmseInc = zeros(length(muC),length(muB));
@@ -380,6 +381,8 @@ axis image
 save_all_figures_to_directory(resultsDir,['sim',num2str(iAcq),'Fig']);
 close all,
 %%
+
+
 
 rsld = load(fullfile(resultsDir,'rsld.mat'));
 swtv = load(fullfile(resultsDir,'swtv.mat'));
@@ -468,3 +471,5 @@ hold off
 
 % save_all_figures_to_directory(resultsDir,'regFinal','svg');
 % close all
+
+end

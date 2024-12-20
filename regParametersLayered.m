@@ -5,9 +5,9 @@ setup,
 % resultsDir1 = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\reg';
 dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_layered';
 refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-resultsDir1 = 'P:\smerino\UFFC2024results\reg';
+resultsDir0 = 'P:\smerino\UFFC2024results\reg';
 
-[~,~] = mkdir(resultsDir1);
+[~,~] = mkdir(resultsDir0);
 targetFiles = dir([dataDir,'\rf*.mat']);
 refFiles = dir([refDir,'\rf*.mat']);
 
@@ -41,11 +41,11 @@ NptodB = log10(exp(1))*20;
 x_inf = -1.5; x_sup = 1.5;
 z_inf = 0.4; z_sup = 3.7;
 
-for iAcq = 1:length(targetFiles)
+for iAcq = 1:4 % length(targetFiles)
 
 %% Setting up
 
-resultsDir = fullfile(resultsDir1,"layered"+iAcq);
+resultsDir = fullfile(resultsDir0,"S"+iAcq);
 mkdir(resultsDir)
 load(fullfile(dataDir,targetFiles(iAcq).name));
 
@@ -185,7 +185,7 @@ bottom = Zq > 2.1;
 
 %% TV
 disp('RSLD')
-muRange = 10.^(0:0.25:6);
+muRange = 10.^(0:0.25:7);
 rmseTop = zeros(size(muRange));
 rmseBottom = zeros(size(muRange));
 cnr = zeros(size(muRange));
@@ -259,7 +259,7 @@ desvSNR = abs(SNR-SNRopt)/SNRopt*100;
 wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Finding optimal reg parameters
-muB = 10.^(1.5:0.25:4.5);
+muB = 10.^(1.5:0.25:5.5);
 muC = 10.^(-1.5:0.25:2.5);
 rmseTop = zeros(length(muC),length(muB));
 rmseBottom = zeros(length(muC),length(muB));
@@ -307,10 +307,10 @@ ylabel('log_{10}(\mu_C)')
 %% SWIFT
 disp('SWIFT')
 
-muB = 10.^(1.5:0.25:4.5);
+muB = 10.^(1.5:0.25:5.5);
 muC = 10.^(-1.5:0.25:2.5);
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
-/rmseTop = zeros(length(muC),length(muB));
+rmseTop = zeros(length(muC),length(muB));
 rmseBottom = zeros(length(muC),length(muB));
 cnr = zeros(length(muC),length(muB));
 

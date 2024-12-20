@@ -8,17 +8,15 @@ clear, clc
 %     '\ID544V2\06-08-2023-Generic'];
 % resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\phantoms';
 
-dataDir = ['C:\Users\smerino.C084288\Documents\Datasets\' ...
-    'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
-refDir = ['C:\Users\smerino.C084288\Documents\Datasets\' ...
-    'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+dataDir = 'P:\smerino\phantoms\ID316V2\06-08-2023-Generic';
+refDir = 'P:\smerino\phantoms\ID544V2\06-08-2023-Generic';
 resultsDir0 = 'P:\smerino\UFFC2024results\reg';
 [~,~] = mkdir(resultsDir0);
 
 rawFiles = dir([dataDir,'\*.rf']);
 targetFiles = dir([dataDir,'\*.mat']);
 targetFiles = targetFiles(end-2:end);
-if ~exist("resultsDir","dir"); mkdir(resultsDir); end
+
 tableName = 'phantoms.xlsx';
 
 %% Constants
@@ -271,7 +269,7 @@ for iMu = 1:length(muRange)
     rmseInc(iMu) = r.rmseInc ;
     cnr(iMu) = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
 end
-save(fullfile(resultsDir,'rsld.mat'),"rmseTop","rmseBottom","cnr","muRange")
+save(fullfile(resultsDir,'rsld.mat'),"rmseBack","rmseInc","cnr","muRange")
 
 
 figure,
@@ -311,7 +309,7 @@ wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 
 % Finding optimal reg parameters
-muB = 10.^(1.5:0.25:4.5);
+muB = 10.^(1.5:0.25:5.5);
 muC = 10.^(-1.5:0.25:2.5);
 rmseBack = zeros(length(muC),length(muB));
 rmseInc = zeros(length(muC),length(muB));
@@ -361,7 +359,7 @@ ylabel('log_{10}(\mu_C)')
 %% SWIFT
 disp('SWIFT')
 
-muB = 10.^(1.5:0.25:4.5);
+muB = 10.^(1.5:0.25:5.5);
 muC = 10.^(-1.5:0.25:2.5);
 rmseBack = zeros(length(muC),length(muB));
 rmseInc = zeros(length(muC),length(muB));
@@ -518,7 +516,7 @@ contour(log10(swift.muB),log10(swift.muC),swift.cnr>max(swtv.cnr(:)),...
 %     1,'w--', 'LineWidth',1.5)
 hold off
 
-% save_all_figures_to_directory(resultsDir,'regFinal','svg');
-% close all
+save_all_figures_to_directory(resultsDir,'regFinal','svg');
+close all
 end
 
