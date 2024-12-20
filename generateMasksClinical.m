@@ -3,20 +3,27 @@
 % Created on March 25, 2024
 % ====================================================================== %
 setup,
-baseDir = 'C:\Users\sebas\Documents\Data\Attenuation\Thyroid_Data_PUCP_UTD';
-refsDir = 'C:\Users\sebas\Documents\Data\Attenuation\REFERENCES';
+% baseDir = 'C:\Users\sebas\Documents\Data\Attenuation\Thyroid_Data_PUCP_UTD';
+% refsDir = 'C:\Users\sebas\Documents\Data\Attenuation\REFERENCES';
+% resultsDir = 'newMasks';
+% 
+% T = readtable('params.xlsx');
+% if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
+baseDir = 'C:\Users\sebas\Documents\Data\Attenuation\MAMA';
+refsDir = 'C:\Users\sebas\Documents\Data\Attenuation\MAMA';
 resultsDir = 'newMasks';
 
-T = readtable('params.xlsx');
-if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
+tableName = 'clinical.xlsx';
+T = readtable('mama.xlsx');
 
 
 dynRange = [-50 0];
 
+iAcq = 1;
 %% Loading case FULL VERSION
 for iAcq = 8:height(T)
 
-patient = num2str(T.patient(iAcq));
+patient = num2str(T.patient{iAcq});
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
 refDir = fullfile(refsDir,T.reference{iAcq});
 
