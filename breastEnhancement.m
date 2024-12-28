@@ -20,7 +20,7 @@ ratio_zx        = 12/8;
 
 iAcq = 1;
 %% Loading case
-for iAcq = 1:4
+for iAcq = 1:1
 patient = num2str(T.patient{iAcq});
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
 refDir = fullfile(refsDir,T.reference{iAcq});
