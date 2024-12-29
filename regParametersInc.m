@@ -190,40 +190,41 @@ inc = (Xq.^2 + (Zq-2).^2)<= (rInc-0.1)^2;
 back = (Xq.^2 + (Zq-2).^2) >= (rInc+0.1)^2;
 
 %% TV
-disp('RSLD')
-muRange = 10.^(0:0.25:7);
-rmseBack = zeros(size(muRange));
-rmseInc = zeros(size(muRange));
-cnr = zeros(size(muRange));
-for iMu = 1:length(muRange)
-    mutv = muRange(iMu);
-    tic
-    [Bn,~] = AlterOpti_ADMM(A1,A2,b(:),mutv,mutv,m,n,tol,mask(:));
-    toc
-    BRTV = reshape(Bn*NptodB,m,n);
-
-    % imagesc(x_ACS,z_ACS,BRTV, attRange)
-    % colormap(turbo)
-    % axis image
-    % title('RSLD')
-    % % ylabel('Axial [cm]')
-    % xlabel('Lateral [cm]')
-    pause(0.01)
-
-    AttInterp = interp2(X,Z,BRTV,Xq,Zq);
-    r.meanBack = mean(AttInterp(back),"omitnan");
-    r.stdBack = std(AttInterp(back),"omitnan");
-    r.meanInc = mean(AttInterp(inc),"omitnan");
-    r.stdInc = std(AttInterp(inc),"omitnan");
-    r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
-    r.biasInc = mean( AttInterp(inc) - groundTruthInc(iAcq),"omitnan");
-    r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
-    r.rmseInc = sqrt(mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,"omitnan"));
-    rmseBack(iMu) = r.rmseBack ;
-    rmseInc(iMu) = r.rmseInc ;
-    cnr(iMu) = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
-end
-save(fullfile(resultsDir,'rsld.mat'),"rmseBack","rmseInc","cnr","muRange")
+% disp('RSLD')
+% muRange = 10.^(0:0.25:7);
+% rmseBack = zeros(size(muRange));
+% rmseInc = zeros(size(muRange));
+% cnr = zeros(size(muRange));
+% for iMu = 1:length(muRange)
+%     mutv = muRange(iMu);
+%     tic
+%     [Bn,~] = AlterOpti_ADMM(A1,A2,b(:),mutv,mutv,m,n,tol,mask(:));
+%     toc
+%     BRTV = reshape(Bn*NptodB,m,n);
+% 
+%     % imagesc(x_ACS,z_ACS,BRTV, attRange)
+%     % colormap(turbo)
+%     % axis image
+%     % title('RSLD')
+%     % % ylabel('Axial [cm]')
+%     % xlabel('Lateral [cm]')
+%     pause(0.01)
+% 
+%     AttInterp = interp2(X,Z,BRTV,Xq,Zq);
+%     r.meanBack = mean(AttInterp(back),"omitnan");
+%     r.stdBack = std(AttInterp(back),"omitnan");
+%     r.meanInc = mean(AttInterp(inc),"omitnan");
+%     r.stdInc = std(AttInterp(inc),"omitnan");
+%     r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
+%     r.biasInc = mean( AttInterp(inc) - groundTruthInc(iAcq),"omitnan");
+%     r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
+%     r.rmseInc = sqrt(mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,"omitnan"));
+%     rmseBack(iMu) = r.rmseBack ;
+%     rmseInc(iMu) = r.rmseInc ;
+%     cnr(iMu) = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
+% end
+% save(fullfile(resultsDir,'rsld.mat'),"rmseBack","rmseInc","cnr","muRange")
+load(fullfile(resultsDir,'rsld.mat'),"rmseBack","rmseInc","cnr","muRange")
 
 figure,
 semilogx(muRange,(rmseBack/0.5 + rmseInc)/2)
@@ -264,8 +265,10 @@ desvSNR = abs(SNR-SNRopt)/SNRopt*100;
 wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Finding optimal reg parameters
-muB = 10.^(1.5:0.25:5.5);
-muC = 10.^(-1.5:0.25:2.5);
+% muB = 10.^(1.5:0.25:5.5);
+muB = 10.^(1:0.25:1.25);
+muC = 10.^(-3:0.25:2.5);
+
 rmseBack = zeros(length(muC),length(muB));
 rmseInc = zeros(length(muC),length(muB));
 cnr = zeros(length(muC),length(muB));
@@ -294,6 +297,14 @@ for mmB = 1:length(muB)
         cnr(mmC,mmB) = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
     end
 end
+
+out = load(fullfile(resultsDir,'swtv.mat'),"rmseBack","rmseInc","cnr","muB","muC");
+% muC = [muC,out.muC];
+muB = [muB,out.muB];
+rmseBack = [rmseBack,out.rmseBack];
+rmseInc = [rmseInc,out.rmseInc];
+cnr = [cnr,out.cnr];
+
 save(fullfile(resultsDir,'swtv.mat'),"rmseBack","rmseInc","cnr","muB","muC")
 
 figure,
@@ -310,59 +321,67 @@ ylabel('log_{10}(\mu_C)')
 
 
 %% SWIFT
-disp('SWIFT')
-
-muB = 10.^(1.5:0.25:5.5);
-muC = 10.^(-1.5:0.25:2.5);
-rmseBack = zeros(length(muC),length(muB));
-rmseInc = zeros(length(muC),length(muB));
-cnr = zeros(length(muC),length(muB));
-
-for mmB = 1:length(muB)
-    for mmC = 1:length(muC)
-        muBswift = muB(mmB);
-        muCswift = muC(mmC);
-        
-        tic
-        % First iteration
-        [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBswift,muCswift,m,n,tol,mask(:));
-        bscMap = reshape(Cn*NptodB,m,n);
-
-        % Weight map
-        w = (1-reject)*(abs(bscMap)<ratioCutOff)+reject;
-        wExt = movmin(w,extension);
-
-        % Weight matrices and new system
-        W = repmat(wExt,[1 1 p]);
-        W = spdiags(W(:),0,m*n*p,m*n*p);
-        bw = W*b(:);
-        A1w = W*A1;
-        A2w = W*A2;
-
-        % Second iteration
-        [Bn,~,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBswift,muCswift,m,n,tol,mask(:),w);
-        BSWIFT = reshape(Bn*NptodB,m,n);
-        toc
-        pause(0.01)
-
-        AttInterp = interp2(X,Z,BSWIFT,Xq,Zq);
-        r.meanBack = mean(AttInterp(back),"omitnan");
-        r.stdBack = std(AttInterp(back),"omitnan");
-        r.meanInc = mean(AttInterp(inc),"omitnan");
-        r.stdInc = std(AttInterp(inc),"omitnan");
-        r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
-        r.biasInc = mean( AttInterp(inc) - groundTruthInc(iAcq),"omitnan");
-        r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
-        r.rmseInc = sqrt(mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,"omitnan"));
-        % rmse(mmC,mmB) = (r.rmseBack + r.rmseInc)/2;
-        rmseBack(mmC,mmB) = r.rmseBack ;
-        rmseInc(mmC,mmB) = r.rmseInc ;
-        cnr(mmC,mmB) = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
-    end
-end
-%%
-save(fullfile(resultsDir,'swift.mat'),"rmseBack","rmseInc","cnr","muB","muC")
-% load(fullfile(resultsDir,'swift.mat'),"rmse","muB","muC")
+% disp('SWIFT')
+% 
+% muB = 10.^(1.5:0.25:5.5);
+% % muC = 10.^(-1.5:0.25:2.5);
+% muC = 10.^(-3:0.25:-1.75);
+% 
+% rmseBack = zeros(length(muC),length(muB));
+% rmseInc = zeros(length(muC),length(muB));
+% cnr = zeros(length(muC),length(muB));
+% 
+% for mmB = 1:length(muB)
+%     for mmC = 1:length(muC)
+%         muBswift = muB(mmB);
+%         muCswift = muC(mmC);
+% 
+%         tic
+%         % First iteration
+%         [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBswift,muCswift,m,n,tol,mask(:));
+%         bscMap = reshape(Cn*NptodB,m,n);
+% 
+%         % Weight map
+%         w = (1-reject)*(abs(bscMap)<ratioCutOff)+reject;
+%         wExt = movmin(w,extension);
+% 
+%         % Weight matrices and new system
+%         W = repmat(wExt,[1 1 p]);
+%         W = spdiags(W(:),0,m*n*p,m*n*p);
+%         bw = W*b(:);
+%         A1w = W*A1;
+%         A2w = W*A2;
+% 
+%         % Second iteration
+%         [Bn,~,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBswift,muCswift,m,n,tol,mask(:),w);
+%         BSWIFT = reshape(Bn*NptodB,m,n);
+%         toc
+%         pause(0.01)
+% 
+%         AttInterp = interp2(X,Z,BSWIFT,Xq,Zq);
+%         r.meanBack = mean(AttInterp(back),"omitnan");
+%         r.stdBack = std(AttInterp(back),"omitnan");
+%         r.meanInc = mean(AttInterp(inc),"omitnan");
+%         r.stdInc = std(AttInterp(inc),"omitnan");
+%         r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
+%         r.biasInc = mean( AttInterp(inc) - groundTruthInc(iAcq),"omitnan");
+%         r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
+%         r.rmseInc = sqrt(mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,"omitnan"));
+%         % rmse(mmC,mmB) = (r.rmseBack + r.rmseInc)/2;
+%         rmseBack(mmC,mmB) = r.rmseBack ;
+%         rmseInc(mmC,mmB) = r.rmseInc ;
+%         cnr(mmC,mmB) = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
+%     end
+% end
+% %%
+% out = load(fullfile(resultsDir,'swift.mat'),"rmseBack","rmseInc","cnr","muB","muC");
+% muC = [muC,out.muC];
+% rmseBack = [rmseBack;out.rmseBack];
+% rmseInc = [rmseInc;out.rmseInc];
+% cnr = [cnr;out.cnr];
+% 
+% save(fullfile(resultsDir,'swift.mat'),"rmseBack","rmseInc","cnr","muB","muC")
+load(fullfile(resultsDir,'swift.mat'),"rmseBack","rmseInc","cnr","muB","muC")
 
 figure,
 imagesc(log10(muB),log10(muC),(rmseBack/0.5 + rmseInc)/2)
