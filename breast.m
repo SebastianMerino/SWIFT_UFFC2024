@@ -360,6 +360,70 @@ roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
 [X,Z] = meshgrid(x,z);
 roiSub = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
 
+figure('Units','centimeters', 'Position',[5 5 11 11])
+tiledlayout(2,2, 'TileSpacing','compact', 'Padding','compact')
+t1 = nexttile();
+imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
+title('B-mode')
+ylim([0.1, 3])
+hold on
+contour(xFull,zFull,roi,1,'w--')
+hold off
+% xlabel('Lateral [cm]')
+ylabel('Axial [cm]')
+hBm = colorbar;
+hBm.Label.String = 'dB';
+hBm.Location = 'northoutside';
+
+nexttile,
+[~,~,hColor] = imOverlayInterp(BmodeFull,BRTV,dynRange,attRange,0.7,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+title('RSLD')
+% colorbar off
+ylim([0.1, 3])
+hold on
+contour(xFull,zFull,roi,1,'w--')
+contour(xFull,zFull,maskThyroid & roi,1,'w--')
+hold off
+% axis off
+% xlabel('Lateral [cm]')
+hColor.Location = 'northoutside';
+% hColor.Layout.Tile = 'northoutside';
+hColor.Label.String = 'ACS [dB/cm/MHz]';
+
+nexttile,
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BRSWTV,dynRange,attRange,0.7,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+title('SWTV-ACE')
+colorbar off
+ylim([0.1, 3])
+hold on
+contour(xFull,zFull,roi,1,'w--')
+contour(xFull,zFull,maskThyroid & roi,1,'w--')
+hold off
+% axis off
+xlabel('Lateral [cm]')
+ylabel('Axial [cm]')
+
+
+nexttile,
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BSWIFT,dynRange,attRange,0.7,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+title('SWIFT')
+colorbar off
+ylim([0.1, 3])
+hold on
+contour(xFull,zFull,roi,1,'w--')
+contour(xFull,zFull,maskThyroid & roi,1,'w--')
+hold off
+xlabel('Lateral [cm]')
+% hColor.Location = 'northoutside';
+% hColor.Layout.Tile = 'northoutside';
+% hColor.Label.String = 'ACS [dB/cm/MHz]';
+colormap(t1,'gray')
+fontsize(gcf,9,'points')
+
+%% New fig
 figure('Units','centimeters', 'Position',[5 5 24 4.6])
 tiledlayout(1,4, 'TileSpacing','compact', 'Padding','compact')
 t1 = nexttile();
@@ -420,7 +484,6 @@ xlabel('Lateral [cm]')
 hColor.Label.String = 'ACS [dB/cm/MHz]';
 colormap(t1,'gray')
 fontsize(gcf,9,'points')
-
 %%
 save_all_figures_to_directory(resultsDir, ...
     [num2str(iAcq),'pat',patient,'fig'],'svg');
