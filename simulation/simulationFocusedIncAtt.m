@@ -6,7 +6,7 @@
 function [] = simulationFocusedIncAtt(BaseDir)
 
 addpath(genpath(pwd))
-simuNames = {'incAtt1','incAtt2','incAtt3','incAtt4','incAtt5','incAtt6'};
+simuNames = {'incAtt3'};
 % mkdir(BaseDir)
 
 % medium parameters
@@ -20,8 +20,7 @@ source_cycles   = 3.5;      % number of toneburst cycles
 source_focus    = 40e-3;    % focal length [m]
 element_pitch   = 0.3e-3;   % pitch [m]
 element_width   = 0.25e-3;  % width [m]
-focal_number_Tx = 3;
-focal_number_Rx = 1;
+focal_number    = 2;
 nLines          = 96;
 
 % grid parameters
@@ -33,7 +32,7 @@ translation     = [-20e-3, 0];
 rotation        = 0;
 
 % computational parameters
-DATA_CAST       = 'gpuArray-single'; % set to 'single' or 'gpuArray-single'
+DATA_CAST       = 'single'; % set to 'single' or 'gpuArray-single'
 ppw             = 6;        % number of points per wavelength, 4 to 8
 depth           = 40e-3;    % imaging depth [m]
 cfl             = 0.3;      % CFL number, could be 0.3 or 0.5
@@ -62,25 +61,30 @@ for iSim = 1:length(simuNames)
     rx = kgrid.y;
 
     % Parameters
-    switch iSim
-        case {1,4}
-            background_std = 0.004;
-            inc_std = 0.004;
-        case {2,5}
-            background_std = 0.002;
-            inc_std = 0.008;
-        case {3,6}
-            background_std = 0.008;
-            inc_std = 0.002;
-    end
+    % switch iSim
+    %     case {1,4}
+    %         background_std = 0.004;
+    %         inc_std = 0.004;
+    %     case {2,5}
+    %         background_std = 0.002;
+    %         inc_std = 0.008;
+    %     case {3,6}
+    %         background_std = 0.008;
+    %         inc_std = 0.002;
+    % end
+    % 
+    % if iSim<=3
+    %     background_alpha = 0.5;       % [dB/(MHz^y cm)]
+    %     inc_alpha = 1;
+    % else
+    %     background_alpha = 1;       % [dB/(MHz^y cm)]
+    %     inc_alpha = 0.5;
+    % end
+    background_std = 0.008;
+    inc_std = 0.002;  
+    background_alpha = 0.5;       % [dB/(MHz^y cm)]
+    inc_alpha = 1;
 
-    if iSim<=3
-        background_alpha = 0.5;       % [dB/(MHz^y cm)]
-        inc_alpha = 1;
-    else
-        background_alpha = 1;       % [dB/(MHz^y cm)]
-        inc_alpha = 0.5;
-    end
 
     % Background
     medium = addRegionSimu([],c0,rho0,background_std,...
@@ -123,7 +127,7 @@ for iSim = 1:length(simuNames)
     colormap(t3,"turbo")
 
     %% SOURCE
-    aperture = source_focus/focal_number_Tx;
+    aperture = source_focus/focal_number;
     element_num = floor(aperture/element_pitch);
 
     % set indices for each element
@@ -195,7 +199,7 @@ for iSim = 1:length(simuNames)
         % beamforming
         fs = 1/kgrid.dt;
         bf_data = BFangle(combined_sensor_data',element_num,fs,c0,element_pitch,...
-            'rect',focal_number_Rx,0);
+            'rect',focal_number,0);
         index = floor(element_num/2)+1;
         bf_data_final(:,iLine) = bf_data(:,index);
 

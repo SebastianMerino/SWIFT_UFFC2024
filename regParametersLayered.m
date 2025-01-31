@@ -184,42 +184,42 @@ top = Zq < 1.9; % 0.1 cm interface
 bottom = Zq > 2.1;
 
 %% TV
-disp('RSLD')
-muRange = 10.^(0:0.25:7);
-rmseTop = zeros(size(muRange));
-rmseBottom = zeros(size(muRange));
-cnr = zeros(size(muRange));
-for iMu = 1:length(muRange)
-    mutv = muRange(iMu);
-    tic
-    [Bn,~] = AlterOpti_ADMM(A1,A2,b(:),mutv,mutv,m,n,tol,mask(:));
-    toc
-    BRTV = reshape(Bn*NptodB,m,n);
-
-    % imagesc(x_ACS,z_ACS,BRTV, attRange)
-    % colormap(turbo)
-    % axis image
-    % title('RSLD')
-    % % ylabel('Axial [cm]')
-    % xlabel('Lateral [cm]')
-    pause(0.01)
-
-    AttInterp = interp2(X,Z,BRTV,Xq,Zq);
-    r.meanTop = mean(AttInterp(top),"omitnan");
-    r.stdTop = std(AttInterp(top),"omitnan");
-    r.meanBottom = mean(AttInterp(bottom),"omitnan");
-    r.stdBottom = std(AttInterp(bottom),"omitnan");
-    r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
-    r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
-    r.rmseTop = sqrt(mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,"omitnan"));
-    r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omitnan"));
-    r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
-    rmseTop(iMu) = r.rmseTop ;
-    rmseBottom(iMu) = r.rmseBottom ;
-    cnr(iMu) = abs(r.meanTop - r.meanBottom)/sqrt(r.stdTop^2 + r.stdBottom^2);
-end
-save(fullfile(resultsDir,'rsld.mat'),"rmseTop","rmseBottom","cnr","muRange")
-
+% disp('RSLD')
+% muRange = 10.^(0:0.25:7);
+% rmseTop = zeros(size(muRange));
+% rmseBottom = zeros(size(muRange));
+% cnr = zeros(size(muRange));
+% for iMu = 1:length(muRange)
+%     mutv = muRange(iMu);
+%     tic
+%     [Bn,~] = AlterOpti_ADMM(A1,A2,b(:),mutv,mutv,m,n,tol,mask(:));
+%     toc
+%     BRTV = reshape(Bn*NptodB,m,n);
+% 
+%     % imagesc(x_ACS,z_ACS,BRTV, attRange)
+%     % colormap(turbo)
+%     % axis image
+%     % title('RSLD')
+%     % % ylabel('Axial [cm]')
+%     % xlabel('Lateral [cm]')
+%     pause(0.01)
+% 
+%     AttInterp = interp2(X,Z,BRTV,Xq,Zq);
+%     r.meanTop = mean(AttInterp(top),"omitnan");
+%     r.stdTop = std(AttInterp(top),"omitnan");
+%     r.meanBottom = mean(AttInterp(bottom),"omitnan");
+%     r.stdBottom = std(AttInterp(bottom),"omitnan");
+%     r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+%     r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
+%     r.rmseTop = sqrt(mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,"omitnan"));
+%     r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omitnan"));
+%     r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
+%     rmseTop(iMu) = r.rmseTop ;
+%     rmseBottom(iMu) = r.rmseBottom ;
+%     cnr(iMu) = abs(r.meanTop - r.meanBottom)/sqrt(r.stdTop^2 + r.stdBottom^2);
+% end
+% save(fullfile(resultsDir,'rsld.mat'),"rmseTop","rmseBottom","cnr","muRange")
+load(fullfile(resultsDir,'rsld.mat'),"rmseTop","rmseBottom","cnr","muRange")
 figure,
 semilogx(muRange,(rmseTop/0.5 + rmseBottom)/2)
 grid on
@@ -259,8 +259,9 @@ desvSNR = abs(SNR-SNRopt)/SNRopt*100;
 wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Finding optimal reg parameters
-muB = 10.^(1.5:0.25:5.5);
-muC = 10.^(-1.5:0.25:2.5);
+muB = 10.^(1:0.25:1.25);
+muC = 10.^(-3:0.25:2.5);
+
 rmseTop = zeros(length(muC),length(muB));
 rmseBottom = zeros(length(muC),length(muB));
 cnr = zeros(length(muC),length(muB));
@@ -289,7 +290,15 @@ for mmB = 1:length(muB)
         cnr(mmC,mmB) = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
     end
 end
+% save(fullfile(resultsDir,'swtv.mat'),"rmseTop","rmseBottom","cnr","muB","muC")
+out = load(fullfile(resultsDir,'swtv.mat'),"rmseTop","rmseBottom","cnr","muB","muC");
+% muC = [muC,out.muC];
+muB = [muB,out.muB];
+rmseTop = [rmseTop,out.rmseTop];
+rmseBottom = [rmseBottom,out.rmseBottom];
+cnr = [cnr,out.cnr];
 save(fullfile(resultsDir,'swtv.mat'),"rmseTop","rmseBottom","cnr","muB","muC")
+
 
 figure,
 imagesc(log10(muB),log10(muC),(rmseTop/0.5 + rmseBottom)/2)
@@ -305,60 +314,67 @@ ylabel('log_{10}(\mu_C)')
 
 
 %% SWIFT
-disp('SWIFT')
-
-muB = 10.^(1.5:0.25:5.5);
-muC = 10.^(-1.5:0.25:2.5);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
-rmseTop = zeros(length(muC),length(muB));
-rmseBottom = zeros(length(muC),length(muB));
-cnr = zeros(length(muC),length(muB));
-
-for mmB = 1:length(muB)
-    for mmC = 1:length(muC)
-        muBswift = muB(mmB);
-        muCswift = muC(mmC);
-        
-        tic
-        % First iteration
-        [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBswift,muCswift,m,n,tol,mask(:));
-        bscMap = reshape(Cn*NptodB,m,n);
-
-        % Weight map
-        w = (1-reject)*(abs(bscMap)<ratioCutOff)+reject;
-        wExt = movmin(w,extension);
-
-        % Weight matrices and new system
-        W = repmat(wExt,[1 1 p]);
-        W = spdiags(W(:),0,m*n*p,m*n*p);
-        bw = W*b(:);
-        A1w = W*A1;
-        A2w = W*A2;
-
-        % Second iteration
-        [Bn,~,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBswift,muCswift,m,n,tol,mask(:),w);
-        BSWIFT = reshape(Bn*NptodB,m,n);
-        toc
-        pause(0.01)
-
-        AttInterp = interp2(X,Z,BSWIFT,Xq,Zq);
-        r.meanTop = mean(AttInterp(top),"omitnan");
-        r.stdTop = std(AttInterp(top),"omitnan");
-        r.meanBottom = mean(AttInterp(bottom),"omitnan");
-        r.stdBottom = std(AttInterp(bottom),"omitnan");
-        r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
-        r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
-        r.rmseTop = sqrt(mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,"omitnan"));
-        r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omitnan"));
-        r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
-        rmseTop(mmC,mmB) = r.rmseTop ;
-        rmseBottom(mmC,mmB) = r.rmseBottom ;
-        cnr(mmC,mmB) = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
-    end
-end
-%%
-save(fullfile(resultsDir,'swift.mat'),"rmseTop","rmseBottom","cnr","muB","muC")
-% load(fullfile(resultsDir,'swift.mat'),"rmse","muB","muC")
+% disp('SWIFT')
+% 
+% muB = 10.^(1.5:0.25:5.5);
+% muC = 10.^(-3:0.25:-1.75);
+% % muC = 10.^(-1.5:0.25:2.5);
+% 
+% rmseTop = zeros(length(muC),length(muB));
+% rmseBottom = zeros(length(muC),length(muB));
+% cnr = zeros(length(muC),length(muB));
+% 
+% for mmB = 1:length(muB)
+%     for mmC = 1:length(muC)
+%         muBswift = muB(mmB);
+%         muCswift = muC(mmC);
+% 
+%         tic
+%         % First iteration
+%         [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBswift,muCswift,m,n,tol,mask(:));
+%         bscMap = reshape(Cn*NptodB,m,n);
+% 
+%         % Weight map
+%         w = (1-reject)*(abs(bscMap)<ratioCutOff)+reject;
+%         wExt = movmin(w,extension);
+% 
+%         % Weight matrices and new system
+%         W = repmat(wExt,[1 1 p]);
+%         W = spdiags(W(:),0,m*n*p,m*n*p);
+%         bw = W*b(:);
+%         A1w = W*A1;
+%         A2w = W*A2;
+% 
+%         % Second iteration
+%         [Bn,~,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBswift,muCswift,m,n,tol,mask(:),w);
+%         BSWIFT = reshape(Bn*NptodB,m,n);
+%         toc
+%         pause(0.01)
+% 
+%         AttInterp = interp2(X,Z,BSWIFT,Xq,Zq);
+%         r.meanTop = mean(AttInterp(top),"omitnan");
+%         r.stdTop = std(AttInterp(top),"omitnan");
+%         r.meanBottom = mean(AttInterp(bottom),"omitnan");
+%         r.stdBottom = std(AttInterp(bottom),"omitnan");
+%         r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+%         r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
+%         r.rmseTop = sqrt(mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,"omitnan"));
+%         r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omitnan"));
+%         r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
+%         rmseTop(mmC,mmB) = r.rmseTop ;
+%         rmseBottom(mmC,mmB) = r.rmseBottom ;
+%         cnr(mmC,mmB) = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
+%     end
+% end
+% %%
+% out = load(fullfile(resultsDir,'swift.mat'),"rmseTop","rmseBottom","cnr","muB","muC");
+% muC = [muC,out.muC];
+% % muB = [muB,out.muB];
+% rmseTop = [rmseTop;out.rmseTop];
+% rmseBottom = [rmseBottom;out.rmseBottom];
+% cnr = [cnr;out.cnr];
+% save(fullfile(resultsDir,'swift.mat'),"rmseTop","rmseBottom","cnr","muB","muC")
+load(fullfile(resultsDir,'swift.mat'),"rmseTop","rmseBottom","cnr","muB","muC")
 
 figure,
 imagesc(log10(muB),log10(muC),(rmseTop/0.5 + rmseBottom)/2)
