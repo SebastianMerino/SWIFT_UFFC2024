@@ -4,20 +4,17 @@
 % Created on Jan 31, 2024
 % ====================================================================== %
 
-clear,clc
-addpath('./functions_v7');
-addpath('./AttUtils');
-addpath('./journalScripts/');
-
+setup,
 % baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\simulations_processed\inc_journal'];
 % resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-02-20\BS_8_12';
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+targetDir = ['C:\Users\sebas\Documents\Data\' ...
     'Attenuation\Simulation\24_04_04_inc'];
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+refDir = ['C:\Users\sebas\Documents\Data\' ...
     'Attenuation\Simulation\24_04_25_ref'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-29';
+resultsDir = ['C:\Users\sebas\Documents\Data\Attenuation\' ...
+    'UFFC2024Results\graphical_abstract'];
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -58,17 +55,11 @@ bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
 %% For looping
-% figure('Units','centimeters', 'Position',[5 5 25 8]);
-% tl = tiledlayout(2,5, "Padding","tight");
-
 iAcq = 2;
 
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
-muBtv = 10^3; muCtv = 10^1;
-muBswtv = 10^2.5; muCswtv = 10^0;
-muBtvl1 = 10^3; muCtvl1 = 10^0.5;
-muBwfr = 10^3.5; muCwfr = 10^1;
+muBswift = 10^3.5; muCswift = 10^1;
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
 dx = x(2)-x(1);
@@ -242,13 +233,14 @@ sldLine = mean(sldLine)'*NptodB;
 
 %fit1 = f\sldLine;
 fit2 = [f ones(length(f),1)]\sldLine;
-figure('Units','centimeters', 'Position',[5 5 5 10]),
+figure('Units','points', 'Position',[100 100 120 280]),
 
-tl = tiledlayout(3,1, "Padding","compact", 'TileSpacing','compact');
+tl = tiledlayout(5,1, "Padding","tight", 'TileSpacing','tight');
 
-t1 = nexttile([2,1]);
+t1 = nexttile([3,1]);
 imagesc(x,z,Bmode,dynRange)
 axis image
+axis off
 xlim([x_ACS(1) x_ACS(end)]),
 ylim([z_ACS(1) z_ACS(end)]),
 %xlabel('Lateral [cm]'), ylabel('Axial [cm]')
@@ -260,8 +252,8 @@ title('B-mode')
 % c.Label.String = 'dB';
 % fontsize(gcf,8,'points')
 
-nexttile
-plot(f,sldLine),
+nexttile([2,1]);
+plot(f,sldLine, 'LineWidth',1),
 hold on,
 %plot(f,fit1*f, '--')
 plot(f,fit2(1)*f + fit2(2), 'k--')
@@ -269,88 +261,71 @@ hold off,
 grid on,
 xlim([freq_L,freq_H]/1e6),
 ylim([1 3.5]),
-xlabel('Frequency [MHz]')
-ylabel('Att. [dB/cm]')
+% xlabel('Freq. [MHz]')
+% ylabel('Att. [dB/cm]')
 title('SLD')
 %legend({'SLD','Fit 1', 'Fit 2'}, 'Location','northwest')
 
 %plot(f,sldLine)
 %grid on
-fontsize(gcf,10,'points')
+fontsize(gcf,18,'points')
 
-%% TVL1
-[Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBtvl1,muCtvl1,m,n,tol,mask(:));
-BRTVL1 = reshape(Bn*NptodB,m,n);
-CRTVL1 = reshape(Cn*NptodB,m,n);
+%% SWIFT
+% First iteration
+[Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBswift,muCswift,m,n,tol,mask(:));
+BTVL1 = reshape(Bn*NptodB,m,n);
+CTVL1 = reshape(Cn*NptodB,m,n);
 
+% Weight map
+w = (1-reject)*(abs(CTVL1)<ratioCutOff)+reject;
+wExt = movmin(w,extension);
 
-%% WFR
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
-bscMap = reshape(Cn*NptodB,m,n);
-
-% Computing weights
-w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
-w = movmin(w,extension);
-
-% %%
-% w = ones(size(BRTVL1));
-% borderMask = (Z-cz).^2 + (X-cx).^2 <= (rInc-0.15)^2 | ...
-%     (Z-cz).^2 + (X-cx).^2 >= (rInc+0.15)^2 ;
-% w(borderMask) = 1;
-% w(~borderMask) = 0.1;
-% w(18:24,:) = 1;
-% 
-% figure, imagesc(x_ACS,z_ACS,w)
-%% -------
-% Setting up new system
-W = repmat(w,[1 1 p]);
+% Weight matrices and new system
+W = repmat(wExt,[1 1 p]);
 W = spdiags(W(:),0,m*n*p,m*n*p);
 bw = W*b(:);        
 A1w = W*A1;
 A2w = W*A2;
 
-% Method
-[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
-BRWFR = reshape(Bn*NptodB,m,n);
-CRWFR = reshape(Cn*NptodB,m,n);
-
+% Second iteration
+tic
+[Bn,~,ite] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBswift,muCswift,m,n,tol,mask(:),w);
+exTime = toc;
+BSWIFT = reshape(Bn*NptodB,m,n);
 
 %% Plotting
-figure('Units','centimeters', 'Position',[5 5 4 4]);
-imagesc(x_ACS,z_ACS,BRTVL1, attRange)
+figure('Units','points', 'Position',[100 100 100 120]);
+imagesc(x_ACS,z_ACS,BTVL1, attRange)
 colormap(turbo)
 axis image
-title('ACS - TVL1')
-c = colorbar;
-% c.Label.String = '[db/cm/MHz]';
-fontsize(gcf,10,'points')
-
-figure('Units','centimeters', 'Position',[5 5 4 4]);
-imagesc(x_ACS,z_ACS,bscMap, [-20 20])
+title('ACS')
+fontsize(gcf,18,'points')
+axis off
+figure('Units','points', 'Position',[100 100 100 120]);
+imagesc(x_ACS,z_ACS,CTVL1, [-20 20])
 colormap(parula)
 axis image
-title('\DeltaBCS - TVL1')
-c = colorbar;
-% c.Label.String = '[db/cm/MHz]';
-fontsize(gcf,10,'points')
+axis off
+title('\DeltaBCS')
+fontsize(gcf,18,'points')
 
-figure('Units','centimeters', 'Position',[5 5 4 4]);
-imagesc(x_ACS,z_ACS,w, [0 1])
+figure('Units','points', 'Position',[100 100 100 120]);
+imagesc(x_ACS,z_ACS,wExt, [0 1])
 colormap(parula)
 axis image
 title('Weights')
-c = colorbar;
-% c.Label.String = '[db/cm/MHz]';
-fontsize(gcf,10,'points')
+axis off
+% c = colorbar;
+fontsize(gcf,18,'points')
 
-figure('Units','centimeters', 'Position',[5 5 6 6]);
-imagesc(x_ACS,z_ACS,BRWFR, attRange)
+figure('Units','points', 'Position',[100 100 100 120]);
+imagesc(x_ACS,z_ACS,BSWIFT, attRange)
 colormap(turbo)
 axis image
-title('ACS - WFR')
-c = colorbar;
-% c.Label.String = '[db/cm/MHz]';
-fontsize(gcf,10,'points')
+axis off
+title('ACS - SWIFT')
+% c = colorbar;
+fontsize(gcf,18,'points')
 
 %%
 
