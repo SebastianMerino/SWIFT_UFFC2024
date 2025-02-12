@@ -1,11 +1,11 @@
 clear,clc
 
-dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
-refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024Results\sim_inc';
-% dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_inc';
-% refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
-% resultsDir = 'P:\smerino\UFFC2024results\simulation';
+% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
+% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024Results\sim_inc';
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_inc';
+refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+resultsDir = 'P:\smerino\UFFC2024results\simulation';
 
 [~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
@@ -43,6 +43,8 @@ NptodB = log10(exp(1))*20;
 % Region for attenuation imaging
 x_inf = -1.5; x_sup = 1.5;
 z_inf = 0.4; z_sup = 3.7;
+
+iAcq = 1;
 %% Setting up
 
 for iAcq = 1:3
@@ -110,7 +112,7 @@ m  = length(z0p);
 
 %% Spectrum
 % Frequency samples
-NFFT = 2^(nextpow2(nz/2)+2);
+NFFT = 2^(nextpow2(nz/2)+1);
 band = (0:NFFT-1)'/NFFT * fs;   % [Hz] Band of frequencies
 rang = band > freq_L & band < freq_H ;   % useful frequency range
 f  = band(rang)*1e-6; % [MHz]

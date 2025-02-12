@@ -31,7 +31,7 @@ ite  = 0;
 error = 1;
 
 Bprev = B;
-while abs(error) > tol && ite < 100
+while abs(error) > tol && ite < 30
     ite = ite + 1;
     
     rho = 1;
